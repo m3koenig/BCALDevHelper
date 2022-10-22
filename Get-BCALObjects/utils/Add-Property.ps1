@@ -5,17 +5,17 @@ function Add-Property {
     )
 
     begin{
-        $ALTableFieldProperty = New-Object PSObject
     }
 
     
     process {
-        if (($TableProperty.Groups[1]).ToString().ToLower() -eq 'tablerelation') {
+        if ($TableProperty.Groups[1].ToString().ToLower()  -eq 'tablerelation') {
             return
         }
         
-        Write-Verbose "-----$($Property.Groups[1]) - $($Property.Groups[2])"
+        Write-Verbose "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])"
 
+        $ALTableFieldProperty = New-Object PSObject
         $ALTableFieldProperty | Add-Member NoteProperty "$($TableProperty.Groups[1])" "$($TableProperty.Groups[2])"
 
         return $ALTableFieldProperty

@@ -14,7 +14,7 @@ function New-BCALMermaidFlowChart {
 
     process {
         if ($null -eq $ALObjects) {
-            Write-Host "Loading Objects"
+            Write-Host ">Loading Objects" -ForegroundColor DarkCyan
             $ALObjects = Get-BCALObjects $SourceFilePath
         }
 

@@ -5,7 +5,6 @@ function Add-Calcfields {
     )
 
     begin {
-        $ALTableFieldProperty = New-Object PSObject
     }
 
     process {
@@ -16,6 +15,7 @@ function Add-Calcfields {
         Write-Verbose "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])"
 
         [string]$FieldCalcformula = $TableProperty.Groups[2];
+        $ALTableFieldProperty = New-Object PSObject
         $ALTableFieldProperty | Add-Member NoteProperty "CalcformulaCode" "$($FieldCalcformula)"
 
         $TableCalcfields = @()

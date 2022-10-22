@@ -5,7 +5,6 @@ function Add-TableRelations {
     )
 
     begin {
-        $ALTableFieldProperty = New-Object PSObject
     }
 
     process {
@@ -16,6 +15,8 @@ function Add-TableRelations {
         Write-Verbose "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])"
 
         [string]$TableRelationValue = $TableProperty.Groups[2];
+        
+        $ALTableFieldProperty = New-Object PSObject
         $ALTableFieldProperty | Add-Member NoteProperty "TableRelationCode" "$($TableRelationValue)"
 
         $TableRelations = @()

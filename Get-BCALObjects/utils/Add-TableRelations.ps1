@@ -28,7 +28,8 @@ function Add-TableRelations {
 
         $TableRelationIfRegEx = '(?:^|\)\) )(".*?")((?:\.)[\S\s]*?)?(?i: WHERE|$|\n)'
         $TableRelationIfValue = select-string -InputObject $TableRelationValue -Pattern $TableRelationIfRegEx -AllMatches | ForEach-Object { $_.Matches }
-
+        
+        Write-Verbose "------IF Table Relation Value: $($TableRelationIfValue)"
         if (![string]::IsNullOrEmpty($TableRelationIfValue)) {
             $TableRelationIfValue | ForEach-Object {
                 $FieldPropertyTableRelationValue = ($_.Groups[1].Value).Trim();
@@ -49,6 +50,8 @@ function Add-TableRelations {
                 Write-Verbose "------IF Table Relation Table Value: $($FieldPropertyTableRelationValue)"
                 Write-Verbose "------IF Table Relation Field Value: $($FieldPropertyTableRelationField)"
             }
+
+            Write-Verbose "------IF Table Relation Count: $($TableRelations.Count)"
         }
 
         # Write-Host $TableRelations

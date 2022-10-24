@@ -16,8 +16,8 @@ function Add-TableRelations {
 
         [string]$TableRelationValue = $TableProperty.Groups[2];
         
-        $ALTableFieldProperty = New-Object PSObject
-        $ALTableFieldProperty | Add-Member NoteProperty "TableRelationCode" "$($TableRelationValue)"
+        $ALTableRelationProperty = New-Object PSObject
+        $ALTableRelationProperty | Add-Member NoteProperty "TableRelationCode" "$($TableRelationValue)"
 
         $TableRelations = @()
 
@@ -55,8 +55,8 @@ function Add-TableRelations {
         }
 
         # Write-Host $TableRelations
-        $ALTableFieldProperty | Add-Member NoteProperty "TableRelations" $TableRelations
+        $ALTableRelationProperty | Add-Member NoteProperty "TableRelations" $TableRelations
         
-        return $ALTableFieldProperty
+        return $ALTableRelationProperty
     }
 }

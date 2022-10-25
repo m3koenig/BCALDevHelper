@@ -27,8 +27,8 @@ function Get-BCALObjects {
     )
 
     begin {
-        . (Join-Path $PSScriptRoot "\utils\Add-TableRelations.ps1")
-        . (Join-Path $PSScriptRoot "\utils\Add-Property.ps1")
+        . (Join-Path $PSScriptRoot "\utils\Get-TableRelations.ps1")
+        . (Join-Path $PSScriptRoot "\utils\Get-Property.ps1")
         . (Join-Path $PSScriptRoot "\utils\Add-Calcfields.ps1")
 
         $ALObjects = @()
@@ -86,7 +86,6 @@ function Get-BCALObjects {
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
 
-
                     if ($ObjectType.ToUpper() -eq 'TABLE') {
                         Write-Verbose "--Read fields of the table..."
 
@@ -100,45 +99,47 @@ function Get-BCALObjects {
                             $TableFields | ForEach-Object {
                                 $Field = $_;
 
-                                $ALObjectField = New-Object PSObject
+                                $ALObjectField = @{}
                                 Write-Verbose "---$($Field.Groups[1].Value) - $($Field.Groups[2].Value) - $($Field.Groups[3].Value)"
                                 $AlObjectFieldName = $Field.Groups[2].Value.Trim().Replace("""", "");
                                 $AlFieldCode = $Field.Groups[4].Value;
 
-                                $ALObjectField | Add-Member NoteProperty "ID" "$($Field.Groups[1].Value.ToInt32($Null))"
-                                $ALObjectField | Add-Member NoteProperty "Name" "$($AlObjectFieldName)"
-                                $ALObjectField | Add-Member NoteProperty "DataType" "$($Field.Groups[3].Value)"
-                                $ALObjectField | Add-Member NoteProperty "Code" "$($AlFieldCode)"
+                                $ALObjectField.ID = "$($Field.Groups[1].Value.ToInt32($Null))"
+                                $ALObjectField.Name = "$($AlObjectFieldName)"
+                                $ALObjectField.DataType = "$($Field.Groups[3].Value)"
+                                $ALObjectField.Code = "$($AlFieldCode)"
 
                                 # $RegexFieldProperties = '(\w+)(?:\s?=\s?)(.+);'
                                 $RegexFieldProperties = '(?:^|\s|\t)(\w+)(?:\s?=\s?)([\s\S\n]+?);'
                                 $TableFieldProperties = select-string -InputObject $AlFieldCode -Pattern $RegexFieldProperties -AllMatches | ForEach-Object { $_.Matches }
 
                                 if (![string]::IsNullOrEmpty($TableFieldProperties)) {
-                                    $ALTableFieldProperties = @()
+                                    $ALObjectField.Properties = @{}
 
                                     Write-Verbose "----Field Properties"
                                     # $ALTableFieldProperty = New-Object PSObject
                                     $TableFieldProperties | ForEach-Object {
                                         $Property = $_;
+                                        
+                                        # TODO: Back to Get-Property, skip its TableRelation
+                                        $ALObjectField.Properties."$($Property.Groups[1])" = "$($Property.Groups[2])"
+                                        # $ALTableFieldProperty = Get-Property -TableProperty $Property
+                                        # $ALTableFieldProperties += $ALTableFieldProperty
 
-                                        $ALTableFieldProperty = Add-Property -TableProperty $Property
-                                        $ALTableFieldProperties += $ALTableFieldProperty
-
-                                        $ALTableFieldProperty = Add-TableRelations -TableProperty $Property
-                                        $ALTableFieldProperties += $ALTableFieldProperty
-
-                                        $ALTableFieldProperty = Add-Calcfields -TableProperty $Property
-                                        $ALTableFieldProperties += $ALTableFieldProperty
+                                        $ALObjectField.Properties.TableRelations = Get-TableRelations -TableProperty $Property 
+                                        if ($null -eq $ALObjectField.Properties.TableRelations) {
+                                            $ALObjectField.Properties.Remove("TableRelations")
+                                        }
+                                        # $ALTableFieldProperty = Add-Calcfields -TableProperty $Property
+                                        # $ALTableFieldProperties += $ALTableFieldProperty
                                     }
                                 }
                                 # $ALObjectField | Add-Member PSObject $ALTableFieldProperties
-                                $ALObjectField | Add-Member NoteProperty "Properties" $ALTableFieldProperties
-
-                                $ALObjectFields += $ALObjectField
+                                # $ALObjectField | Add-Member NoteProperty "Properties" $ALTableFieldProperties
+                                
+                                $ALObjectFields += (New-Object psobject -Property $ALObjectField)
                             }
                             Write-Verbose "++++++++++++++++++++++++++"
-
 
                             $ALObject | Add-Member NoteProperty "Fields" $ALObjectFields
                         }

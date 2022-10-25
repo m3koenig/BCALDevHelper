@@ -1,4 +1,4 @@
-function Add-TableRelations {
+function Get-TableRelations {
     [CmdletBinding()]
     Param(
         $TableProperty
@@ -16,8 +16,8 @@ function Add-TableRelations {
 
         [string]$TableRelationValue = $TableProperty.Groups[2];
         
-        $ALTableRelationProperty = New-Object PSObject
-        $ALTableRelationProperty | Add-Member NoteProperty "TableRelationCode" "$($TableRelationValue)"
+        $ALTableRelationProperty = @{}
+        $ALTableRelationProperty."TableRelationCode" = "$($TableRelationValue)"
 
         $TableRelations = @()
 
@@ -40,12 +40,12 @@ function Add-TableRelations {
                     $FieldPropertyTableRelationField = $FieldPropertyTableRelationField.Substring(1, $FieldPropertyTableRelationField.Length-1);
                 }
 
-                $TableRelation = New-Object PSObject
-                $TableRelation | Add-Member NoteProperty "Table" "$($FieldPropertyTableRelationValue)"
-                $TableRelation | Add-Member NoteProperty "Field" "$($FieldPropertyTableRelationField)"
+                $TableRelation = @{}
+                $TableRelation."Table" = "$($FieldPropertyTableRelationValue)"
+                $TableRelation."Field" = "$($FieldPropertyTableRelationField)"
                 # $TableRelation | Add-Member NoteProperty "Condition" "$($FieldPropertyTableRelationCondition)"
                 # $TableRelation | Add-Member NoteProperty "TableFilters" "$($FieldPropertyTableRelationFilters)"
-                $TableRelations += $TableRelation
+                $TableRelations += (New-Object psobject -Property $TableRelation)
 
                 Write-Verbose "------IF Table Relation Table Value: $($FieldPropertyTableRelationValue)"
                 Write-Verbose "------IF Table Relation Field Value: $($FieldPropertyTableRelationField)"
@@ -55,7 +55,8 @@ function Add-TableRelations {
         }
 
         # Write-Host $TableRelations
-        $ALTableRelationProperty | Add-Member NoteProperty "TableRelations" $TableRelations
+        # $ALTableRelationProperty."TableRelations" = @{}
+        $ALTableRelationProperty."TableRelations" = $TableRelations
         
         return $ALTableRelationProperty
     }

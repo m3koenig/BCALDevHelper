@@ -59,6 +59,7 @@ function Get-BCALObjects {
 
                 }
 
+                # Get Object ObjectType, ID, Name 
                 # $regex = '^(\w+)\s(\d*)\s"(.*)"'
                 $regex = '(\w+)\s(\d*)\s"(.*)"'
 

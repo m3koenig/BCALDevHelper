@@ -89,8 +89,8 @@ function Get-BCALObjects {
 
 
 
-                    if ($ObjectType.ToUpper() -eq 'TABLE') {
-                        Write-Verbose "--Read fields of the table..."
+                    if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {
+                        Write-Verbose "--Read fields of the $($ObjectType.ToLower())..."
 
                         $RegexField = 'field\(([0-9]*);(.*);(.*)\)[\r\n]+(.*{([^}]*)})'
                         $TableFields = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }

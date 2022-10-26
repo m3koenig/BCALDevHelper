@@ -18,7 +18,7 @@ function New-BCALMermaidFlowChart {
             $ALObjects = Get-BCALObjects $SourceFilePath
         }
 
-        $ALObjects = $ALObjects | Where-Object { $_.Type -eq "table" }
+        $ALObjects = $ALObjects | Where-Object { ($_.Type -eq "table") -or ($_.Type -eq "tableextension")}
 
         $NextLine = "`r`n"
 

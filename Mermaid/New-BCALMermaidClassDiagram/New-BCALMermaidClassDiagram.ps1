@@ -25,7 +25,7 @@ function New-BCALMermaidClassDiagram {
             $ALObjects = Get-BCALObjects $SourceFilePath
         }
 
-        $ALObjects = $ALObjects | Where-Object { $_.Type -eq "table" }
+        $ALObjects = $ALObjects | Where-Object { ($_.Type -eq "table") -or $_.Type -eq "tableextension" }
 
         $NextLine = "`r`n"
 
@@ -39,24 +39,31 @@ function New-BCALMermaidClassDiagram {
         [string]$AlClassDiagramm = "classDiagram$($NextLine)"
         $ALObjects | ForEach-Object {
             $ALObject = $_;
+            Write-Verbose "#########################################################################################"
+            Write-Verbose "ALObject: $($ALObject.Type) - $($ALObject.Id) - $($ALObject.Name)"
+            if ([string]::IsNullOrEmpty($ALObject.Extends)) {
+                Write-Verbose "Extends $($ALObject.Extends)"
+            }
+            Write-Verbose "------"
 
             #TODO: Bug das Codeunits auch Felder haben
+            # Kein Bug, Standard Object Verhalten bei PS wenn man flexible Attribute anhängt
             if ($ALObject.Type -eq "codeunit") {
                 # write-host $ALObject
                 # write-host "Name '$($ALObjectField.Name)'"
             }
 
             $ALObjectName = Convert-TextToMermaidName -InputText $ALObject.Name
-
-            Write-Verbose "#########################################################################################"
             Write-Verbose "-ID $($ALObject.ID)"
             Write-Verbose "-ALObjectName = $($ALObjectName)"
 
             [string]$ALObjectMermaidClass += "$($NextLine)"
             [string]$ALObjectMermaidClass += "   class $($ALObject.Type)_$($ALObjectName){$($NextLine)";
+            # Write-Verbose "$($ALObjectMermaidClass)"
             
             $ALObject.Fields | ForEach-Object {
                 $ALObjectField = $_;
+                Write-Verbose "--Load Field..."
 
                 $ALObjectFieldName = Convert-TextToMermaidName -InputText $ALObjectField.Name
                     
@@ -78,7 +85,7 @@ function New-BCALMermaidClassDiagram {
                         
                         # $ALObjectFieldPropteryTableReleations = Get-Member -InputObject $ALObjectFieldProperty -MemberType Property -Name "TableRelations"
                         
-                        if($ALObjectFieldPropertyName -eq "TableRelations") {
+                        if ($ALObjectFieldPropertyName -eq "TableRelations") {
                             Write-Verbose "-----TableRelations"
                             $ALObjectFieldProperty.TableRelations | ForEach-Object {
                                 $ALObjectFieldPropertyTableRelation = $_;
@@ -88,18 +95,18 @@ function New-BCALMermaidClassDiagram {
                                 Write-Verbose "------Table: $($TableRelationTableName)"
                                 Write-Verbose "------Field: $($TableRelationTableField)"
 
-                                if (![string]::IsNullOrEmpty($TableRelationTableName)){
+                                if (![string]::IsNullOrEmpty($TableRelationTableName)) {
                                     $TableRelationTableName = Convert-TextToMermaidName -InputText $TableRelationTableName
 
-                                    Write-Verbose "------$($TableRelationTableName) <|-- $($ALObjectName)"
-                                    $ALObjectTableRelations += "   table_$($TableRelationTableName) <|-- table_$($ALObjectName)$($NextLine)"
+                                    Write-Verbose "------$($TableRelationTableName) <|-- $($ALObject.Type.ToLower())_$($ALObjectName)"
+                                    $ALObjectTableRelations += "   table_$($TableRelationTableName) <|-- $($ALObject.Type.ToLower())_$($ALObjectName)$($NextLine)"
                                 }
 
                             }
                         }
 
                         
-                        if($ALObjectFieldPropertyName -eq "Calcformulas") {
+                        if ($ALObjectFieldPropertyName -eq "Calcformulas") {
                             Write-Verbose "-----Calcformulas"
                             $ALObjectFieldProperty.Calcformulas | ForEach-Object {
                                 $ALObjectFieldPropertyCalcformula = $_;
@@ -109,11 +116,11 @@ function New-BCALMermaidClassDiagram {
                                 Write-Verbose "------Table: $($CalcformulaTableName)"
                                 Write-Verbose "------Field: $($CalcformulaFieldName)"
 
-                                if (![string]::IsNullOrEmpty($CalcformulaTableName)){
+                                if (![string]::IsNullOrEmpty($CalcformulaTableName)) {
                                     $CalcformulaTableName = Convert-TextToMermaidName -InputText $CalcformulaTableName
 
                                     Write-Verbose "------$($CalcformulaTableName) <.. $($ALObjectName)"
-                                    $ALObjectCalcfields += "   table_$($CalcformulaTableName) <.. table_$($ALObjectName)$($NextLine)"
+                                    $ALObjectCalcfields += "   table_$($CalcformulaTableName) <.. $($ALObject.Type.ToLower())_$($ALObjectName)$($NextLine)"
                                 }
 
                             }

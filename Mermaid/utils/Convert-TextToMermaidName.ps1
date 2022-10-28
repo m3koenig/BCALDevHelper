@@ -15,6 +15,7 @@ function Convert-TextToMermaidName {
         $ConvertedText = $ConvertedText.Replace('(', '_');
         $ConvertedText = $ConvertedText.Replace(')', '_');
         $ConvertedText = $ConvertedText.Replace('=', '_');
+        $ConvertedText = $ConvertedText.Replace('&', '_');
 
         return $ConvertedText
     }

@@ -59,8 +59,9 @@ function Get-BCALObjects {
 
                 }
 
+                # Get Object ObjectType, ID, Name 
                 # $regex = '^(\w+)\s(\d*)\s"(.*)"'
-                $regex = '(\w+)\s(\d*)\s"(.*)"'
+                $regex = '(\w+)\s(\d*)\s"(.*?)"(?:\s(extends)\s"(.*)")?'
 
                 $FileContentObject = select-string -InputObject $FileContent -Pattern $regex -AllMatches | ForEach-Object { $_.Matches }
 
@@ -83,12 +84,13 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "ID" "$($FileContentObject.Groups[2].Value)"
                     $ALObject | Add-Member NoteProperty "Name" "$($FileContentObject.Groups[3].Value)"
                     $ALObject | Add-Member NoteProperty "Path" "$($CurrFile.FullName)"
+                    $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
 
 
-                    if ($ObjectType.ToUpper() -eq 'TABLE') {
-                        Write-Verbose "--Read fields of the table..."
+                    if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {
+                        Write-Verbose "--Read fields of the $($ObjectType.ToLower())..."
 
                         $RegexField = 'field\(([0-9]*);(.*);(.*)\)[\r\n]+(.*{([^}]*)})'
                         $TableFields = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }

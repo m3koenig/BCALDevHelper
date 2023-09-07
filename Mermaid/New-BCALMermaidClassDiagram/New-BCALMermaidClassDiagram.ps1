@@ -25,7 +25,7 @@ function New-BCALMermaidClassDiagram {
             $ALObjects = Get-BCALObjects $SourceFilePath
         }
 
-        $ALObjects = $ALObjects | Where-Object { ($_.Type -eq "table") -or $_.Type -eq "tableextension" }
+        $ALObjects = $ALObjects | Where-Object { ($_.Type -eq "table") -or ($_.Type -eq "tableextension" ) -or ($_.Type -eq "codeunit") }
 
         $NextLine = "`r`n"
 
@@ -61,74 +61,94 @@ function New-BCALMermaidClassDiagram {
             [string]$ALObjectMermaidClass += "   class $($ALObject.Type)_$($ALObjectName){$($NextLine)";
             # Write-Verbose "$($ALObjectMermaidClass)"
             
-            $ALObject.Fields | ForEach-Object {
-                $ALObjectField = $_;
-                Write-Verbose "--Load Field..."
+            if (($ALObject.Type -eq "table") -or ($ALObject.Type -eq "tableextension" )) {
+                # Fields!
+                $ALObject.Fields | ForEach-Object {
+                    $ALObjectField = $_;
+                    Write-Verbose "--Load Field..."
 
-                $ALObjectFieldName = Convert-TextToMermaidName -InputText $ALObjectField.Name
+                    $ALObjectFieldName = Convert-TextToMermaidName -InputText $ALObjectField.Name
                     
-                Write-Verbose "--ALObjectFieldName = $($ALObjectFieldName)"
-                Write-Verbose "--ID: $($ALObjectField.ID)"
+                    Write-Verbose "--ALObjectFieldName = $($ALObjectFieldName)"
+                    Write-Verbose "--ID: $($ALObjectField.ID)"
                 
-                if (![string]::IsNullOrEmpty($ALObjectFieldName)) {
-                    $ALObjectMermaidClass += "     +$($ALObjectField.DataType) $($ALObjectFieldName)()$($NextLine)"
+                    if (![string]::IsNullOrEmpty($ALObjectFieldName)) {
+                        $ALObjectMermaidClass += "     +$($ALObjectField.DataType) $($ALObjectFieldName)$($NextLine)"
                     
-                    $ALObjectField.Properties | ForEach-Object {
-                        $ALObjectFieldProperty = $_;
-                        # Write-Verbose "---$($ALObjectFieldProperty)"
+                        $ALObjectField.Properties | ForEach-Object {
+                            $ALObjectFieldProperty = $_;
+                            # Write-Verbose "---$($ALObjectFieldProperty)"
 
 
-                        $ALObjectFieldPropertyName = $ALObjectFieldProperty.PSObject.Properties.Name;
-                        Write-Verbose "----Name: $($ALObjectFieldPropertyName)"
-                        $ALObjectFieldPropertyValue = $ALObjectFieldProperty.PSObject.Properties.Value;
-                        Write-Verbose "-----Value: $($ALObjectFieldPropertyValue)"
+                            $ALObjectFieldPropertyName = $ALObjectFieldProperty.PSObject.Properties.Name;
+                            Write-Verbose "----Name: $($ALObjectFieldPropertyName)"
+                            $ALObjectFieldPropertyValue = $ALObjectFieldProperty.PSObject.Properties.Value;
+                            Write-Verbose "-----Value: $($ALObjectFieldPropertyValue)"
                         
-                        # $ALObjectFieldPropteryTableReleations = Get-Member -InputObject $ALObjectFieldProperty -MemberType Property -Name "TableRelations"
+                            # $ALObjectFieldPropteryTableReleations = Get-Member -InputObject $ALObjectFieldProperty -MemberType Property -Name "TableRelations"
                         
-                        if ($ALObjectFieldPropertyName -eq "TableRelations") {
-                            Write-Verbose "-----TableRelations"
-                            $ALObjectFieldProperty.TableRelations | ForEach-Object {
-                                $ALObjectFieldPropertyTableRelation = $_;
+                            if ($ALObjectFieldPropertyName -eq "TableRelations") {
+                                Write-Verbose "-----TableRelations"
+                                $ALObjectFieldProperty.TableRelations | ForEach-Object {
+                                    $ALObjectFieldPropertyTableRelation = $_;
                                 
-                                $TableRelationTableName = $ALObjectFieldPropertyTableRelation.Table.Trim();
-                                $TableRelationTableField = $ALObjectFieldPropertyTableRelation.Field.Trim()
-                                Write-Verbose "------Table: $($TableRelationTableName)"
-                                Write-Verbose "------Field: $($TableRelationTableField)"
+                                    $TableRelationTableName = $ALObjectFieldPropertyTableRelation.Table.Trim();
+                                    $TableRelationTableField = $ALObjectFieldPropertyTableRelation.Field.Trim()
+                                    Write-Verbose "------Table: $($TableRelationTableName)"
+                                    Write-Verbose "------Field: $($TableRelationTableField)"
 
-                                if (![string]::IsNullOrEmpty($TableRelationTableName)) {
-                                    $TableRelationTableName = Convert-TextToMermaidName -InputText $TableRelationTableName
+                                    if (![string]::IsNullOrEmpty($TableRelationTableName)) {
+                                        $TableRelationTableName = Convert-TextToMermaidName -InputText $TableRelationTableName
 
-                                    Write-Verbose "------$($TableRelationTableName) <|-- $($ALObject.Type.ToLower())_$($ALObjectName)"
-                                    $ALObjectTableRelations += "   table_$($TableRelationTableName) <|-- $($ALObject.Type.ToLower())_$($ALObjectName)$($NextLine)"
+                                        Write-Verbose "------$($TableRelationTableName) <.. $($ALObject.Type.ToLower())_$($ALObjectName)"
+                                        $ALObjectTableRelations += "   table_$($TableRelationTableName) <.. $($ALObject.Type.ToLower())_$($ALObjectName)$($NextLine)"
+                                    }
+
                                 }
-
                             }
-                        }
 
                         
-                        if ($ALObjectFieldPropertyName -eq "Calcformulas") {
-                            Write-Verbose "-----Calcformulas"
-                            $ALObjectFieldProperty.Calcformulas | ForEach-Object {
-                                $ALObjectFieldPropertyCalcformula = $_;
+                            if ($ALObjectFieldPropertyName -eq "Calcformulas") {
+                                Write-Verbose "-----Calcformulas"
+                                $ALObjectFieldProperty.Calcformulas | ForEach-Object {
+                                    $ALObjectFieldPropertyCalcformula = $_;
 
-                                $CalcformulaTableName = $ALObjectFieldPropertyCalcformula.Table.Trim();
-                                $CalcformulaFieldName = $ALObjectFieldPropertyCalcformula.Field.Trim()
-                                Write-Verbose "------Table: $($CalcformulaTableName)"
-                                Write-Verbose "------Field: $($CalcformulaFieldName)"
+                                    $CalcformulaTableName = $ALObjectFieldPropertyCalcformula.Table.Trim();
+                                    $CalcformulaFieldName = $ALObjectFieldPropertyCalcformula.Field.Trim()
+                                    Write-Verbose "------Table: $($CalcformulaTableName)"
+                                    Write-Verbose "------Field: $($CalcformulaFieldName)"
 
-                                if (![string]::IsNullOrEmpty($CalcformulaTableName)) {
-                                    $CalcformulaTableName = Convert-TextToMermaidName -InputText $CalcformulaTableName
+                                    if (![string]::IsNullOrEmpty($CalcformulaTableName)) {
+                                        $CalcformulaTableName = Convert-TextToMermaidName -InputText $CalcformulaTableName
 
-                                    Write-Verbose "------$($CalcformulaTableName) <.. $($ALObjectName)"
-                                    $ALObjectCalcfields += "   table_$($CalcformulaTableName) <.. $($ALObject.Type.ToLower())_$($ALObjectName)$($NextLine)"
+                                        Write-Verbose "------$($CalcformulaTableName) .. $($ALObjectName)"
+                                        $ALObjectCalcfields += "   table_$($CalcformulaTableName) .. $($ALObject.Type.ToLower())_$($ALObjectName)$($NextLine)"
+                                    }
+
                                 }
-
                             }
-                        }
                         
+                        }
+                    }
+                
+                }
+            }
+
+            if ($ALObject.Type -eq "codeunit") {
+                $ALObject.Procedures | ForEach-Object {
+                    $ALObjectProcedure = $_;
+                    Write-Verbose "--Load Procedure..."
+
+                    $ALObjectProcedureName = Convert-TextToMermaidName -InputText $ALObjectProcedure.Name
+                    
+                    Write-Verbose "--ProcedureName = $($ALObjectProcedureName)"
+                    Write-Verbose "--parameter: $($ALObjectProcedure.parameter)"
+                    Write-Verbose "--return: $($ALObjectProcedure.return)"
+                
+                    if (![string]::IsNullOrEmpty($ALObjectProcedureName)) {
+                        $ALObjectMermaidClass += "     +$($ALObjectProcedureName)()$($NextLine)"
                     }
                 }
-                
             }
             $ALObjectMermaidClass += "  }$($NextLine)"
         }

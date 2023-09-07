@@ -145,6 +145,32 @@ function Get-BCALObjects {
                             $ALObject | Add-Member NoteProperty "Fields" $ALObjectFields
                         }
                     }
+
+                    if ($ObjectType.ToLower() -eq 'codeunit') {
+
+                        Write-Verbose "--Read procedures of the $($ObjectType.ToLower())..."
+
+                        $RegexField = '(?mi)(?<prefix>procedure )(?<name>.*)(?<parameter>\(.*\))(?<return>.*$)'
+                        $Procedures = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }
+
+                        
+                        $ALObjectProcedures = @()
+
+                        $Procedures | ForEach-Object {
+                          $Procedure = $_;
+                          
+                          Write-Verbose "---$($Procedure.Groups['name'])"
+                          $ALObjectProcedure = New-Object PSObject
+                          $ALObjectProcedure | Add-Member NoteProperty "Name" "$($Procedure.Groups['name'])"
+                          $ALObjectProcedure | Add-Member NoteProperty "parameter" "$($Procedure.Groups['parameter'])"
+                          $ALObjectProcedure | Add-Member NoteProperty "return" "$($Procedure.Groups['return'])"
+
+                          
+                          $ALObjectProcedures += $ALObjectProcedure
+                        }
+                        $ALObject | Add-Member NoteProperty "Procedures" $ALObjectProcedures
+                        
+                    }
                 }
                 $ALObjects += $AlObject
             }

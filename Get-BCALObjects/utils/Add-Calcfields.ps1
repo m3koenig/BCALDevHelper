@@ -1,7 +1,9 @@
 function Add-Calcfields {
     [CmdletBinding()]
     Param(
-        $TableProperty
+        $TableProperty,
+
+        [string]$LogFilePath
     )
 
     begin {
@@ -12,7 +14,7 @@ function Add-Calcfields {
             return
         }
         
-        Write-Verbose "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])"
+        Write-BCALLog -Level VERBOSE "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])" -logfile $LogFilePath
 
         [string]$FieldCalcformula = $TableProperty.Groups[2];
         $ALTableFieldProperty = New-Object PSObject
@@ -27,7 +29,7 @@ function Add-Calcfields {
         $TableFlowFieldsTableValue = select-string -InputObject $FieldCalcformula -Pattern $TableFieldCalcformulaRegEx -AllMatches | ForEach-Object { $_.Matches }
 
         if (![string]::IsNullOrEmpty($TableFlowFieldsTableValue)) {
-            Write-Verbose "$($TableFlowFieldsTableValue)"
+            Write-BCALLog -Level VERBOSE "$($TableFlowFieldsTableValue)" -logfile $LogFilePath
             $TableFlowFieldsTableValue | ForEach-Object {
                 $FieldPropertyCalcformulaTable = ($_.Groups[2].Value).Trim();
 
@@ -44,12 +46,12 @@ function Add-Calcfields {
                 # $TableFlowfield | Add-Member NoteProperty "TableFilters" "$($FieldPropertyTableRelationFilters)"
                 $TableCalcfields += $TableFlowfield
 
-                Write-Verbose "------IF Calcformula Table Value: $($FieldPropertyCalcformulaTable)"
-                Write-Verbose "------IF Calcformula Field Value: $($FieldPropertyCalcformulaField)"
+                Write-BCALLog -Level VERBOSE "------IF Calcformula Table Value: $($FieldPropertyCalcformulaTable)" -logfile $LogFilePath
+                Write-BCALLog -Level VERBOSE "------IF Calcformula Field Value: $($FieldPropertyCalcformulaField)" -logfile $LogFilePath
             }
         }
 
-        # Write-Host $TableCalcfields
+        # Write-BCALLog -Level Host $TableCalcfields -logfile $LogFilePath
         $ALTableFieldProperty | Add-Member NoteProperty "Calcformulas" $TableCalcfields
         
         return $ALTableFieldProperty

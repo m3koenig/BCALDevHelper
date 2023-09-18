@@ -14,7 +14,7 @@ function New-BCALMermaidFlowChart {
 
     process {
         if ($null -eq $ALObjects) {
-            Write-Host ">Loading Objects" -ForegroundColor DarkCyan
+            Write-BCALLog ">Loading Objects" -ForegroundColor DarkCyan
             $ALObjects = Get-BCALObjects $SourceFilePath
         }
 
@@ -27,7 +27,7 @@ function New-BCALMermaidFlowChart {
         $ALObjectTableRelations = '';
         $ALObjectCalcfields = '';
 
-        Write-Verbose "Start Object Diagram Mermaid..."
+        Write-BCALLog -Level VERBOSE "Start Object Diagram Mermaid..."
 
         [string]$AlClassDiagramm = "graph TD$($NextLine)"
         $ALObjects | ForEach-Object {
@@ -35,15 +35,15 @@ function New-BCALMermaidFlowChart {
 
             #TODO: Bug das Codeunits auch Felder haben
             if ($ALObject.Type -eq "codeunit") {
-                # write-host $ALObject
-                # write-host "Name '$($ALObjectField.Name)'"
+                # Write-BCALLog $ALObject
+                # Write-BCALLog "Name '$($ALObjectField.Name)'"
             }
 
             $ALObjectName = Convert-TextToMermaidName -InputText $ALObject.Name
 
-            Write-Verbose "#########################################################################################"
-            Write-Verbose "-ID $($ALObject.ID)"
-            Write-Verbose "-ALObjectName = $($ALObjectName)"
+            Write-BCALLog -Level VERBOSE "#########################################################################################"
+            Write-BCALLog -Level VERBOSE "-ID $($ALObject.ID)"
+            Write-BCALLog -Level VERBOSE "-ALObjectName = $($ALObjectName)"
 
             # [string]$ALObjectMermaidClass += "$($NextLine)"
             # [string]$ALObjectMermaidClass += "   class $($ALObject.Type)_$($ALObjectName){$($NextLine)";
@@ -53,38 +53,38 @@ function New-BCALMermaidFlowChart {
 
                 $ALObjectFieldName = Convert-TextToMermaidName -InputText $ALObjectField.Name
                     
-                Write-Verbose "--ALObjectFieldName = $($ALObjectFieldName)"
-                Write-Verbose "--ID: $($ALObjectField.ID)"
+                Write-BCALLog -Level VERBOSE "--ALObjectFieldName = $($ALObjectFieldName)"
+                Write-BCALLog -Level VERBOSE "--ID: $($ALObjectField.ID)"
                 
                 if (![string]::IsNullOrEmpty($ALObjectFieldName)) {
                     # $ALObjectMermaidClass += "     +$($ALObjectField.DataType) $($ALObjectFieldName)()$($NextLine)"
                     
                     $ALObjectField.Properties | ForEach-Object {
                         $ALObjectFieldProperty = $_;
-                        # Write-Verbose "---$($ALObjectFieldProperty)"
+                        # Write-BCALLog -Level VERBOSE "---$($ALObjectFieldProperty)"
 
 
                         $ALObjectFieldPropertyName = $ALObjectFieldProperty.PSObject.Properties.Name;
-                        Write-Verbose "----Name: $($ALObjectFieldPropertyName)"
+                        Write-BCALLog -Level VERBOSE "----Name: $($ALObjectFieldPropertyName)"
                         $ALObjectFieldPropertyValue = $ALObjectFieldProperty.PSObject.Properties.Value;
-                        Write-Verbose "-----Value: $($ALObjectFieldPropertyValue)"
+                        Write-BCALLog -Level VERBOSE "-----Value: $($ALObjectFieldPropertyValue)"
                         
                         # $ALObjectFieldPropteryTableReleations = Get-Member -InputObject $ALObjectFieldProperty -MemberType Property -Name "TableRelations"
                         
                         if($ALObjectFieldPropertyName -eq "TableRelations") {
-                            Write-Verbose "-----TableRelations"
+                            Write-BCALLog -Level VERBOSE "-----TableRelations"
                             $ALObjectFieldProperty.TableRelations | ForEach-Object {
                                 $ALObjectFieldPropertyTableRelation = $_;
                                 
                                 $TableRelationTableName = $ALObjectFieldPropertyTableRelation.Table.Trim();
                                 $TableRelationTableField = $ALObjectFieldPropertyTableRelation.Field.Trim()
-                                Write-Verbose "------Table: $($TableRelationTableName)"
-                                Write-Verbose "------Field: $($TableRelationTableField)"
+                                Write-BCALLog -Level VERBOSE "------Table: $($TableRelationTableName)"
+                                Write-BCALLog -Level VERBOSE "------Field: $($TableRelationTableField)"
 
                                 if (![string]::IsNullOrEmpty($TableRelationTableName)){
                                     $TableRelationTableName = Convert-TextToMermaidName -InputText $TableRelationTableName
 
-                                    Write-Verbose "------$($ALObjectName) --> $($TableRelationTableName)"
+                                    Write-BCALLog -Level VERBOSE "------$($ALObjectName) --> $($TableRelationTableName)"
                                     $ALObjectTableRelations += "   table_$($ALObjectName) --> table_$($TableRelationTableName)$($NextLine)"
                                 }
 
@@ -93,19 +93,19 @@ function New-BCALMermaidFlowChart {
 
                         
                         if($ALObjectFieldPropertyName -eq "Calcformulas") {
-                            Write-Verbose "-----Calcformulas"
+                            Write-BCALLog -Level VERBOSE "-----Calcformulas"
                             $ALObjectFieldProperty.Calcformulas | ForEach-Object {
                                 $ALObjectFieldPropertyCalcformula = $_;
 
                                 $CalcformulaTableName = $ALObjectFieldPropertyCalcformula.Table.Trim();
                                 $CalcformulaFieldName = $ALObjectFieldPropertyCalcformula.Field.Trim()
-                                Write-Verbose "------Table: $($CalcformulaTableName)"
-                                Write-Verbose "------Field: $($CalcformulaFieldName)"
+                                Write-BCALLog -Level VERBOSE "------Table: $($CalcformulaTableName)"
+                                Write-BCALLog -Level VERBOSE "------Field: $($CalcformulaFieldName)"
 
                                 if (![string]::IsNullOrEmpty($CalcformulaTableName)){
                                     $CalcformulaTableName = Convert-TextToMermaidName -InputText $CalcformulaTableName
 
-                                    Write-Verbose "------$($ALObjectName) -.-> $($CalcformulaFieldName)"
+                                    Write-BCALLog -Level VERBOSE "------$($ALObjectName) -.-> $($CalcformulaFieldName)"
                                     $ALObjectTableRelations += "   table_$($ALObjectName) -.-> table_$($CalcformulaTableName)$($NextLine)"
                                 }
 
@@ -120,9 +120,9 @@ function New-BCALMermaidFlowChart {
         }
 
         [string]$AlClassDiagramm += "$($ALObjectTableRelations) $($ALObjectCalcfields)"
-        Write-Verbose "Object Diagram Mermaid created!"
+        Write-BCALLog -Level VERBOSE "Object Diagram Mermaid created!"
 
-        Write-output $AlClassDiagramm  #| Set-Clipboard
+        Write-BCALLog -Level output $AlClassDiagramm  #| Set-Clipboard
     }
 }
 

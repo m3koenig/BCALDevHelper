@@ -1,7 +1,9 @@
 function Add-TableRelations {
     [CmdletBinding()]
     Param(
-        $TableProperty
+        $TableProperty,
+
+        [string]$LogFilePath
     )
 
     begin {
@@ -12,7 +14,7 @@ function Add-TableRelations {
             return
         }
         
-        Write-Verbose "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])"
+        Write-BCALLog -Level VERBOSE "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])" -logfile $LogFilePath
 
         [string]$TableRelationValue = $TableProperty.Groups[2];
         
@@ -29,7 +31,7 @@ function Add-TableRelations {
         $TableRelationIfRegEx = '(?:^|\)\) )(".*?")((?:\.)[\S\s]*?)?(?i: WHERE|$|\n)'
         $TableRelationIfValue = select-string -InputObject $TableRelationValue -Pattern $TableRelationIfRegEx -AllMatches | ForEach-Object { $_.Matches }
         
-        Write-Verbose "------IF Table Relation Value: $($TableRelationIfValue)"
+        Write-BCALLog -Level VERBOSE "------IF Table Relation Value: $($TableRelationIfValue)" -logfile $LogFilePath
         if (![string]::IsNullOrEmpty($TableRelationIfValue)) {
             $TableRelationIfValue | ForEach-Object {
                 $FieldPropertyTableRelationValue = ($_.Groups[1].Value).Trim();
@@ -47,14 +49,14 @@ function Add-TableRelations {
                 # $TableRelation | Add-Member NoteProperty "TableFilters" "$($FieldPropertyTableRelationFilters)"
                 $TableRelations += $TableRelation
 
-                Write-Verbose "------IF Table Relation Table Value: $($FieldPropertyTableRelationValue)"
-                Write-Verbose "------IF Table Relation Field Value: $($FieldPropertyTableRelationField)"
+                Write-BCALLog -Level VERBOSE "------IF Table Relation Table Value: $($FieldPropertyTableRelationValue)" -logfile $LogFilePath
+                Write-BCALLog -Level VERBOSE "------IF Table Relation Field Value: $($FieldPropertyTableRelationField)" -logfile $LogFilePath
             }
 
-            Write-Verbose "------IF Table Relation Count: $($TableRelations.Count)"
+            Write-BCALLog -Level VERBOSE "------IF Table Relation Count: $($TableRelations.Count)" -logfile $LogFilePath
         }
 
-        # Write-Host $TableRelations
+        # Write-BCALLog -Level Host $TableRelations -logfile $LogFilePath
         $ALTableRelationProperty | Add-Member NoteProperty "TableRelations" $TableRelations
         
         return $ALTableRelationProperty

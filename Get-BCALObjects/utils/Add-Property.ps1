@@ -1,7 +1,9 @@
 function Add-Property {
     [CmdletBinding()]
     Param(
-        $TableProperty
+        $TableProperty,
+
+        [string]$LogFilePath
     )
 
     begin{
@@ -13,7 +15,7 @@ function Add-Property {
             return
         }
         
-        Write-Verbose "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])"
+        Write-BCALLog -Level VERBOSE "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])" -logfile $LogFilePath
 
         $ALTableFieldProperty = New-Object PSObject
         $ALTableFieldProperty | Add-Member NoteProperty "$($TableProperty.Groups[1])" "$($TableProperty.Groups[2])"

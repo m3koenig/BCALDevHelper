@@ -16,6 +16,7 @@ try {
 
 Write-Host ">Hello $($myUsername)!" -ForegroundColor DarkCyan
 
+. (Join-Path $PSScriptRoot ".\utils\Write-BCALLog.ps1")
 . (Join-Path $PSScriptRoot ".\Get-BCALObjects\Get-BCALObjects.ps1")
 . (Join-Path $PSScriptRoot ".\Mermaid\New-BCALMermaidClassDiagram\New-BCALMermaidClassDiagram.ps1")
 . (Join-Path $PSScriptRoot ".\Mermaid\New-BCALMermaidFlowChart\New-BCALMermaidFlowChart.ps1")

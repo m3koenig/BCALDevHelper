@@ -11,5 +11,5 @@ jobs:
         
       - name: Publishing
         run: |
-                    Publish-Module -Path '...' -NuGetApiKey ${{ secrets.PSGALLERY }}
+                    Publish-Module -Path '.\.\' -NuGetApiKey ${{ secrets.PSGALLERY }}
         shell: pwsh

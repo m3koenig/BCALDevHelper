@@ -110,7 +110,7 @@ function Get-BCALObjects {
                             $TableFields | ForEach-Object {
                                 $Field = $_;
 
-                                $ALObjectField = New-Object PSObject
+                                $ALObjectField = New-Object PSObject                                
                                 Write-Verbose "---$($Field.Groups['ID'].Value) - $($Field.Groups['Name'].Value) - $($Field.Groups['DataType'].Value)"
                                 $AlObjectFieldName = $Field.Groups['Name'].Value.Trim().Replace("""", "");
                                 $AlFieldCode = $Field.Groups['Code'].Value;
@@ -165,16 +165,16 @@ function Get-BCALObjects {
                         $ALObjectProcedures = @()
 
                         $Procedures | ForEach-Object {
-                          $Procedure = $_;
+                            $Procedure = $_;
                           
-                          Write-Verbose "---$($Procedure.Groups['name'])"
-                          $ALObjectProcedure = New-Object PSObject
-                          $ALObjectProcedure | Add-Member NoteProperty "Name" "$($Procedure.Groups['name'])"
-                          $ALObjectProcedure | Add-Member NoteProperty "parameter" "$($Procedure.Groups['parameter'])"
-                          $ALObjectProcedure | Add-Member NoteProperty "return" "$($Procedure.Groups['return'])"
+                            Write-Verbose "---$($Procedure.Groups['name'])"
+                            $ALObjectProcedure = New-Object PSObject
+                            $ALObjectProcedure | Add-Member NoteProperty "Name" "$($Procedure.Groups['name'])"
+                            $ALObjectProcedure | Add-Member NoteProperty "parameter" "$($Procedure.Groups['parameter'])"
+                            $ALObjectProcedure | Add-Member NoteProperty "return" "$($Procedure.Groups['return'])"
 
                           
-                          $ALObjectProcedures += $ALObjectProcedure
+                            $ALObjectProcedures += $ALObjectProcedure
                         }
                         $ALObject | Add-Member NoteProperty "Procedures" $ALObjectProcedures
                         

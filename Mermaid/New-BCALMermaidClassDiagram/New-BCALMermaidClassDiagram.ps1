@@ -95,8 +95,7 @@ function New-BCALMermaidClassDiagram {
                                     $ALObjectFieldProperty.TableRelations | ForEach-Object {
                                         $ALObjectFieldPropertyTableRelation = $_;
                                 
-                                        $TableRelationTableName = $ALObjectFieldPropertyTableRelation.Table.Trim();
-                                        $TableRelationTableName = $TableRelationTableName.Trim().Replace("&", "_");
+                                        $TableRelationTableName = $ALObjectFieldPropertyTableRelation.Table.Trim();                                        
                                         $TableRelationTableField = $ALObjectFieldPropertyTableRelation.Field.Trim()
                                         Write-Verbose "------Table: $($TableRelationTableName)"
                                         Write-Verbose "------Field: $($TableRelationTableField)"

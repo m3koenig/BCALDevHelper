@@ -92,24 +92,32 @@ function Get-BCALObjects {
                     if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {
                         Write-Verbose "--Read fields of the $($ObjectType.ToLower())..."
 
-                        $RegexField = 'field\(([0-9]*);(.*);(.*)\)[\r\n]+(.*{([^}]*)})'
+                        $RegexField = 'field\((?<ID>[0-9]*);(?<Name>.*);(?<DataType>.*)\)[\r\n]+(?<Code> [\s\S\n]+?{([^}]*)})'
                         $TableFields = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }
 
                         Write-Verbose "----------------------"
                         if (![string]::IsNullOrEmpty($TableFields)) {
-                            $ALObjectFields = @()
+                            # if its not an array...
+                            if (!($TableFields -is [array])) {                                
+                                Write-Verbose "--Fields found: 1"
+                            }
+                            else {
+                                
+                                Write-Verbose "--Fields found: $($TableFields.Count)"
+                            }
 
+                            $ALObjectFields = @()
                             $TableFields | ForEach-Object {
                                 $Field = $_;
 
                                 $ALObjectField = New-Object PSObject
-                                Write-Verbose "---$($Field.Groups[1].Value) - $($Field.Groups[2].Value) - $($Field.Groups[3].Value)"
-                                $AlObjectFieldName = $Field.Groups[2].Value.Trim().Replace("""", "");
-                                $AlFieldCode = $Field.Groups[4].Value;
+                                Write-Verbose "---$($Field.Groups['ID'].Value) - $($Field.Groups['Name'].Value) - $($Field.Groups['DataType'].Value)"
+                                $AlObjectFieldName = $Field.Groups['Name'].Value.Trim().Replace("""", "");
+                                $AlFieldCode = $Field.Groups['Code'].Value;
 
-                                $ALObjectField | Add-Member NoteProperty "ID" "$($Field.Groups[1].Value.ToInt32($Null))"
+                                $ALObjectField | Add-Member NoteProperty "ID" $($Field.Groups['ID'].Value.ToInt32($Null))
                                 $ALObjectField | Add-Member NoteProperty "Name" "$($AlObjectFieldName)"
-                                $ALObjectField | Add-Member NoteProperty "DataType" "$($Field.Groups[3].Value)"
+                                $ALObjectField | Add-Member NoteProperty "DataType" "$($Field.Groups['DataType'].Value)"
                                 $ALObjectField | Add-Member NoteProperty "Code" "$($AlFieldCode)"
 
                                 # $RegexFieldProperties = '(\w+)(?:\s?=\s?)(.+);'

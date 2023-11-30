@@ -2,7 +2,7 @@
 .SYNOPSIS
     Will add the translation from the XLIFF file to the AL source code as a comment.
 .DESCRIPTION
-    Will loop through all AL files in the given directory and search for the Source (Caption, Label, ToolTip) in the XLIFF file. The found translation will be added as a comment to the AL source code.
+    Will loop through all AL files (or only one, if the direct path is set) in the given directory and search for the Source (Caption, Label, ToolTip) in the XLIFF file. The found translation will be added as a comment to the AL source code.
     It will check if the property already has a comment and if it has the comment in the language code. If it has the comment in the language code it will replace the existing comment with the new one. If it has no comment it will append the new comment to the property.
     The first translation found in the XLIFF file will be used.
 .PARAMETER SrcDirectory
@@ -14,10 +14,17 @@
 .PARAMETER simulate
     You want to check the result without changing the files? Set this switch and the script will only log the changes it would do. Its recommended to set the LogFilePath parameter to a file.
 .EXAMPLE
+    # Scans the while ALFiles Path for AL files and add the translation from the XLIFF file to the AL source code as a comment. Also it will log the changes to the LogFile.
     $ALFiles = "C:\Projects\BC\AL\Customer\App\src"
     $XMLFile = "C:\Projects\BC\AL\Customer\App\translations\Customer.de-DE.xlf"
     $LogFile = Join-Path $env:TEMP "Sync-BCALTransunitTargetsToXliffSyncComment.log"
     Sync-BCALTransunitTargetsToXliffSyncComment -SrcDirectory $ALFiles -XLIFFFilePath $XMLFile -LogFilePath $LogFile
+.EXAMPLE
+    # Add the translation from the XLIFF file to the AL source code as a comment. Also it will log the changes to the LogFile.
+    $ALFile = "C:\Projects\BC\AL\Customer\App\src\Codeunit\UpdateCustomerByPotal.Codeunit.al"
+    $XMLFile = "C:\Projects\BC\AL\Customer\App\translations\Customer.de-DE.xlf"
+    $LogFile = Join-Path $env:TEMP "Sync-BCALTransunitTargetsToXliffSyncComment.log"
+    Sync-BCALTransunitTargetsToXliffSyncComment -SrcDirectory $ALFile -XLIFFFilePath $XMLFile -LogFilePath $LogFile
 #>
 function Sync-BCALTransunitTargetsToXliffSyncComment {
     [CmdletBinding()]
@@ -49,6 +56,10 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
         $transUnits = Get-BCALXliffAsArray -XliffFilePath $XliffFilePath -LogFilePath $LogFilePath
     
         $files = Get-ChildItem $SrcDirectory -Filter *.al -Recurse
+        # if $files is not array transform it to an array
+        if ($files -isnot [array]) {
+            $files = @($files)
+        }
         $fileCount = $files.Count;
         $currFile = 0;
         $changedPropertyComment = 0;
@@ -66,6 +77,18 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
             $RegexToTranslate = '(?mi)(?<Type>(?: Caption = )|(?: Label )|(?: ToolTip = ))(?:'')(?<ToTranslate>.*?)(?:'')'
             $fileContentTranslatables = select-string -InputObject $content -Pattern $RegexToTranslate -AllMatches | ForEach-Object { $_.Matches }
             Write-BCALLog "->translatable: $($fileContentTranslatables)" -logfile $LogFilePath
+
+            # #region Labels
+            # $RegexToFindLabelArea = '(?mi)(?<Type>[l|L]abels)(?:[\s\S\n]+{)(?<Set>[\s\S\n]+?)(?:})'
+            # $fileLabelArea = select-string -InputObject $content -Pattern $RegexToFindLabelArea -AllMatches | ForEach-Object { $_.Matches }
+            # Write-BCALLog "->fileLabelArea: $($fileLabelArea)" -logfile $LogFilePath
+                        
+            # $RegexToTranslateLabel = '(?mi)(?<LabelName>(?:[\S]+) = )(?:'')(?<ToTranslate>.*?)(?:'')'
+            # $fileLabelTranslateables = select-string -InputObject $fileLabelArea -Pattern $RegexToTranslateLabel -AllMatches | ForEach-Object { $_.Matches }
+            # Write-BCALLog "->fileLabelTranslateables: $($fileLabelTranslateables)" -logfile $LogFilePath            
+            # $fileContentTranslatables += $fileLabelTranslateables
+            # Write-BCALLog "->translatables with label: $($fileContentTranslatables)" -logfile $LogFilePath
+            # #endregion           
             
             
             if ($fileContentTranslatables -isnot [array]) { 
@@ -96,7 +119,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                     $transUnit = $transUnits | Where-Object { ($_.Source -eq $toTranslate) -and ($null -ne $_.Target) -and ($null -ne $_.TargetLanguage) -and ($_.Target -ne "") }                    
                     Write-BCALLog "->Line: $($currentLineToTranslate)" -logfile $LogFilePath
                     Write-BCALLog "-->Source: $($toTranslate)" -logfile $LogFilePath
-                
+
                     $transUnitExist = $false;
                     if ($transUnit -is [array]) {   
                         $transUnitExist = $transUnit.Count -gt 0;
@@ -114,9 +137,10 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                             $LanguageCode = [string]$transUnit.TargetLanguage
                         }
                     }
-                    $NewTranslation = $NewTranslation.Replace("'","""");
                 
                     if ($transUnitExist) {
+                        $NewTranslation = $NewTranslation.Replace("'","""");
+
                         Write-BCALLog "-->Translations: '$($transUnit.Target -join "';'")'" -logfile $LogFilePath
                         Write-BCALLog "-->Target: $($NewTranslation)" -logfile $LogFilePath
                         try {

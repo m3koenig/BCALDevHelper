@@ -9,6 +9,8 @@
     The directory where the AL files are located.
 .PARAMETER XliffFilePath
     The path to the XLIFF file that contains the translations.
+.Parameter copyFromSource
+    Specifies whether translations should be copied from the source text (note: only when there is not already an existing translation in the target).
 .PARAMETER LogFilePath
     The path to the log file. If its not set the log will be written to the console.
 .PARAMETER simulate
@@ -28,6 +30,8 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
         [Parameter(Mandatory = $true)]
         [string]$XliffFilePath,
 
+        [switch]$copyFromSource,
+
         [string]$LogFilePath,
 
         [switch]$simulate
@@ -46,7 +50,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
         $startDate = Get-Date
         Write-BCALLog "Start: $($startDate)" -logfile $LogFilePath
 
-        $transUnits = Get-BCALXliffAsArray -XliffFilePath $XliffFilePath -LogFilePath $LogFilePath
+        $transUnits = Get-BCALXliffAsArray -XliffFilePath $XliffFilePath -LogFilePath $LogFilePath -copyFromSource:$copyFromSource
     
         $files = Get-ChildItem $SrcDirectory -Filter *.al -Recurse
         $fileCount = $files.Count;

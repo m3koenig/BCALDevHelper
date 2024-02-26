@@ -102,7 +102,8 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                     Write-BCALLog "-->Source: $($toTranslate)" -logfile $LogFilePath
                 
                     $transUnitExist = $false;
-                    if ($transUnit -is [array]) {   
+                    $NewTranslation = $null;
+                    if ($transUnit -is [array]) {
                         $transUnitExist = $transUnit.Count -gt 0;
                         if ($transUnitExist) {
                             Write-BCALLog "-->Translations found (will pick first): $($transUnit.Count)" -logfile $LogFilePath
@@ -118,9 +119,9 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                             $LanguageCode = [string]$transUnit.TargetLanguage
                         }
                     }
-                    $NewTranslation = $NewTranslation.Replace("'","""");
                 
                     if ($transUnitExist) {
+                        $NewTranslation = $NewTranslation.Replace("'", """");
                         Write-BCALLog "-->Translations: '$($transUnit.Target -join "';'")'" -logfile $LogFilePath
                         Write-BCALLog "-->Target: $($NewTranslation)" -logfile $LogFilePath
                         try {

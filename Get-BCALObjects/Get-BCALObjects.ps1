@@ -91,7 +91,31 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
+                    #region Get Variable Blocks
+                    # Get All Variable Blocks
+                    Write-BCALLog -Level VERBOSE "--Read all variable reclarations of the $($ObjectType.ToLower())..." -logfile $LogFilePath
 
+                    $RegexVariables = '(?mi)(?<=var[\r|\n])(?<Variables>[\s\S\n]+?)(?<ClosedBy>begin|(?:.*?)procedure |\})'
+                    $AllVariableMatches = select-string -InputObject $FileContent -Pattern $RegexVariables -AllMatches | ForEach-Object { $_.Matches }
+                    Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
+                    if (![string]::IsNullOrEmpty($AllVariableMatches)) {
+                        $ALObjectVariableDeclarations = @()
+
+                        $AllVariableMatches | ForEach-Object {
+                            $VariableBlock = $_;
+
+                            $ALObjectVariableDeclaration = New-Object PSObject
+                            Write-BCALLog -Level VERBOSE "---$($VariableBlock.Groups['Variables'].Value)" -logfile $LogFilePath
+
+                            $ALObjectVariableDeclaration | Add-Member NoteProperty "Code" "$($VariableBlock.Groups['Variables'].Value)"
+                            # only when after "var" is "begin", they are global variables
+                            $ALObjectVariableDeclaration | Add-Member NoteProperty "Global" "$($VariableBlock.Groups['ClosedBy'].Value -ne 'begin')"
+                                
+                            $ALObjectVariableDeclarations += $ALObjectVariableDeclaration
+                        }
+                        $ALObject | Add-Member NoteProperty "VariableDeclarations" $ALObjectVariableDeclarations
+                    }
+                    #endregion
 
                     if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {
                         Write-BCALLog -Level VERBOSE "--Read fields of the $($ObjectType.ToLower())..." -logfile $LogFilePath

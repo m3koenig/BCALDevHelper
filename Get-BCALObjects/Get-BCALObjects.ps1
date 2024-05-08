@@ -93,8 +93,29 @@ function Get-BCALObjects {
 
                     $RegExNamespace = 'namespace.?(?<Namespace>[\s\S\n]*?);';
                     $NamespaceName = (select-string -InputObject $FileContent -Pattern $RegExNamespace -AllMatches | ForEach-Object { $_.Matches })[0].Groups['Namespace'].Value
-                    
                     $ALObject | Add-Member NoteProperty "Namespace" "$($NamespaceName)"
+
+                    
+                    Write-BCALLog -Level VERBOSE "--Read all used namespaces of the $($ObjectType.ToLower())..." -logfile $LogFilePath
+                    $RegExUsingNamespaces = 'using.?(?<UsingNamespace>[\s\S\n]*?);';
+                    $UsingNamespacesNameMatches = (select-string -InputObject $FileContent -Pattern $RegExUsingNamespaces -AllMatches | ForEach-Object { $_.Matches })
+                    Write-BCALLog -Level VERBOSE "-->"
+                    if (![string]::IsNullOrEmpty($UsingNamespacesNameMatches)) {
+                        $ALObjectUsingNamespaces = @()
+
+                        $UsingNamespacesNameMatches | ForEach-Object {
+                            $UsingNamespace = $_;
+
+                            $ALObjectUsingNamespace = New-Object PSObject
+                            Write-BCALLog -Level VERBOSE "----$($UsingNamespace.Groups['UsingNamespace'].Value)" -logfile $LogFilePath
+
+                            $ALObjectUsingNamespace | Add-Member NoteProperty "Namespace" "$($UsingNamespace.Groups['UsingNamespace'].Value)"
+                                
+                            $ALObjectUsingNamespaces += $ALObjectUsingNamespace
+                        }
+                        $ALObject | Add-Member NoteProperty "UsingNamespaces" $ALObjectUsingNamespaces
+                    }
+                    
 
                     #region Get Variable Blocks
                     # Get All Variable Blocks

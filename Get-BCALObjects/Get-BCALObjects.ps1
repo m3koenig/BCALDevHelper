@@ -91,6 +91,11 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
+                    $RegExNamespace = 'namespace.?(?<Namespace>[\s\S\n]*?);';
+                    $NamespaceName = (select-string -InputObject $FileContent -Pattern $RegExNamespace -AllMatches | ForEach-Object { $_.Matches })[0].Groups['Namespace'].Value
+                    
+                    $ALObject | Add-Member NoteProperty "Namespace" "$($NamespaceName)"
+
                     #region Get Variable Blocks
                     # Get All Variable Blocks
                     Write-BCALLog -Level VERBOSE "--Read all variable reclarations of the $($ObjectType.ToLower())..." -logfile $LogFilePath

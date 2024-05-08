@@ -91,7 +91,31 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
+                    #region Get Variable Blocks
+                    # Get All Variable Blocks
+                    Write-BCALLog -Level VERBOSE "--Read all variable reclarations of the $($ObjectType.ToLower())..." -logfile $LogFilePath
 
+                    $RegexVariables = '(?mi)(?<=var[\r|\n])(?<Variables>[\s\S\n]+?)(?<ClosedBy>begin|(?:.*?)procedure |\})'
+                    $AllVariableMatches = select-string -InputObject $FileContent -Pattern $RegexVariables -AllMatches | ForEach-Object { $_.Matches }
+                    Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
+                    if (![string]::IsNullOrEmpty($AllVariableMatches)) {
+                        $ALObjectVariableDeclarations = @()
+
+                        $AllVariableMatches | ForEach-Object {
+                            $VariableBlock = $_;
+
+                            $ALObjectVariableDeclaration = New-Object PSObject
+                            Write-BCALLog -Level VERBOSE "---$($VariableBlock.Groups['Variables'].Value)" -logfile $LogFilePath
+
+                            $ALObjectVariableDeclaration | Add-Member NoteProperty "Code" "$($VariableBlock.Groups['Variables'].Value)"
+                            # only when after "var" is "begin", they are global variables
+                            $ALObjectVariableDeclaration | Add-Member NoteProperty "Global" "$($VariableBlock.Groups['ClosedBy'].Value -ne 'begin')"
+                                
+                            $ALObjectVariableDeclarations += $ALObjectVariableDeclaration
+                        }
+                        $ALObject | Add-Member NoteProperty "VariableDeclarations" $ALObjectVariableDeclarations
+                    }
+                    #endregion
 
                     if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {
                         Write-BCALLog -Level VERBOSE "--Read fields of the $($ObjectType.ToLower())..." -logfile $LogFilePath
@@ -154,23 +178,40 @@ function Get-BCALObjects {
 
                         Write-BCALLog -Level VERBOSE "--Read procedures of the $($ObjectType.ToLower())..." -logfile $LogFilePath
 
-                        $RegexField = '(?mi)(?<prefix>procedure )(?<name>.*)(?<parameter>\(.*\))(?<return>.*$)'
+                        $RegexField = '(?mi)(?<prefix>procedure )(?<name>.*)(?<parameter>\(.*\))(?<return>.*$)(?<code>[\s\S\n]+?end;)'
                         $Procedures = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }
 
                         
                         $ALObjectProcedures = @()
 
                         $Procedures | ForEach-Object {
-                          $Procedure = $_;
+                            $Procedure = $_;
                           
-                          Write-BCALLog -Level VERBOSE "---$($Procedure.Groups['name'])" -logfile $LogFilePath
-                          $ALObjectProcedure = New-Object PSObject
-                          $ALObjectProcedure | Add-Member NoteProperty "Name" "$($Procedure.Groups['name'])"
-                          $ALObjectProcedure | Add-Member NoteProperty "parameter" "$($Procedure.Groups['parameter'])"
-                          $ALObjectProcedure | Add-Member NoteProperty "return" "$($Procedure.Groups['return'])"
+                            Write-BCALLog -Level VERBOSE "---$($Procedure.Groups['name'])" -logfile $LogFilePath
+                            $ALObjectProcedure = New-Object PSObject
+                            $ALObjectProcedure | Add-Member NoteProperty "Name" "$($Procedure.Groups['name'])"
+                            $ALObjectProcedure | Add-Member NoteProperty "parameter" "$($Procedure.Groups['parameter'])"
+                            $ALObjectProcedure | Add-Member NoteProperty "return" "$($Procedure.Groups['return'])"
+                            $ALObjectProcedure | Add-Member NoteProperty "code" "$($Procedure.Groups['code'])"
 
-                          
-                          $ALObjectProcedures += $ALObjectProcedure
+                            
+                            Write-BCALLog -Level VERBOSE "---Read variables of the procedure $($ALObjectProcedure.Name)..." -logfile $LogFilePath
+                            $ProcedureVariableMatches = select-string -InputObject $ALObjectProcedure.code -Pattern $RegexVariables -AllMatches | ForEach-Object { $_.Matches }
+                            if (![string]::IsNullOrEmpty($ProcedureVariableMatches)) {
+
+                                $ProcedureVariableDeclarationMatch = $ProcedureVariableMatches[0];
+        
+                                # $ProcedureVariableDeclarations = New-Object PSObject
+                                Write-BCALLog -Level VERBOSE "----$($ProcedureVariableDeclarationMatch.Groups['Variables'].Value)" -logfile $LogFilePath
+        
+                                # $ProcedureVariableDeclarations | Add-Member NoteProperty "Declarations" "$($VariableBlock.Groups['Variables'].Value)"
+                                $ALObjectProcedure | Add-Member NoteProperty "Declarations" "$($ProcedureVariableDeclarationMatch.Groups['Variables'].Value)"
+                                        
+                                # $ALObjectProcedure += $ProcedureVariableDeclarations
+                                
+                            }
+
+                            $ALObjectProcedures += $ALObjectProcedure
                         }
                         $ALObject | Add-Member NoteProperty "Procedures" $ALObjectProcedures
                         
@@ -184,7 +225,6 @@ function Get-BCALObjects {
 
     end {
         return $ALObjects | Sort-Object Type, ID
-    }
+    }    
 }
-
 Export-ModuleMember -Function Get-BCALObjects

@@ -45,7 +45,8 @@ function Get-BCALObjects {
 
         Write-BCALLog -Level VERBOSE "Filter files with '$($filter)'" -logfile $LogFilePath
 
-        Get-ChildItem $SourceFilePath -Filter $filter -Recurse | ForEach-Object {
+        $ALFiles = Get-ChildItem $SourceFilePath -Filter $filter -Recurse 
+        $ALFiles | ForEach-Object {
             $CurrFile = $_;
             Write-BCALLog -Level VERBOSE "$($CurrFile.Fullname)" -logfile $LogFilePath
             Write-BCALLog -Level VERBOSE "Path is available:$($(Test-Path $CurrFile.Fullname))" -logfile $LogFilePath
@@ -65,15 +66,14 @@ function Get-BCALObjects {
 
                 # Get Object ObjectType, ID, Name 
                 # $regex = '^(\w+)\s(\d*)\s"(.*)"'
-                $regex = '(\w+)\s(\d*)\s"(.*?)"(?:\s(extends)\s"(.*)")?'
+                $regex = '(?<Type>\w+)\s(?<ID>\d*)\s"(?<Name>.*?)"(?:\s(extends)\s"(.*)")?'
 
                 $FileContentObject = select-string -InputObject $FileContent -Pattern $regex -AllMatches | ForEach-Object { $_.Matches }
-
+                
                 if ([string]::IsNullOrEmpty($FileContentObject)) {
                     Write-BCALLog -Level WARN "File Found but Object not recognized!" -logfile $LogFilePath
                     Write-BCALLog -Level WARN "File: $($CurrFile.FullName)" -logfile $LogFilePath
                 }
-
 
                 $AlObject = $null;
                 if (![string]::IsNullOrEmpty($FileContentObject)) {
@@ -81,12 +81,12 @@ function Get-BCALObjects {
                     Write-BCALLog -Level VERBOSE "Object ID found: '$($FileContentObject)'" -logfile $LogFilePath
                     Write-BCALLog -Level VERBOSE  "->$($FileContentObject)" -logfile $LogFilePath
 
-                    $ObjectType = $FileContentObject.Groups[1].Value;
+                    $ObjectType = $FileContentObject.Groups['Type'].Value;
 
                     $ALObject = New-Object PSObject
                     $ALObject | Add-Member NoteProperty "Type" "$($ObjectType.ToLower())"
-                    $ALObject | Add-Member NoteProperty "ID" "$($FileContentObject.Groups[2].Value)"
-                    $ALObject | Add-Member NoteProperty "Name" "$($FileContentObject.Groups[3].Value)"
+                    $ALObject | Add-Member NoteProperty "ID" "$($FileContentObject.Groups['ID'].Value)"
+                    $ALObject | Add-Member NoteProperty "Name" "$($FileContentObject.Groups['Name'].Value)"
                     $ALObject | Add-Member NoteProperty "Path" "$($CurrFile.FullName)"
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"

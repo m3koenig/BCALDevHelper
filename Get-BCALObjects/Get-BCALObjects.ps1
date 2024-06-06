@@ -261,37 +261,43 @@ function Get-BCALObjects {
                                 # $ProcedureVariableDeclarations | Add-Member NoteProperty "Declarations" "$($VariableDeclaration.Groups['Variables'].Value)"
                                 $ALObjectProcedure | Add-Member NoteProperty "Declarations" "$($ProcedureVariableDeclarationMatch.Groups['Variables'].Value)"
 
-                                # # TODO: How to add this in the procedure (we have to go deeper!)
-                                # $RegExVariables = '(?mi)(?!\s*var)^(?:[^\/]*?)(?<VariableName>[\w]*):.(?<DataType>[\S+]*)(?<!;)?(?<SubType>.*)?;';
-                                # $VariablesMatches = select-string -InputObject $ProcedureVariableDeclarationMatch.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
-                                # if (![string]::IsNullOrEmpty($VariablesMatches)) {
-                                #     $VariablesMatches | ForEach-Object {
-                                #         $Variable = $_;
-                                #         Write-BCALLog -Level VERBOSE "---->Variable $($Variable.Groups['VariableName'])" -logfile $LogFilePath
+                                #region This is my current work
+                                # TODO: How to add this in the procedure (we have to go deeper!)
+                                $RegExVariables = '(?mi)(?!\s*var)^(?:[^\/]*?)(?<VariableName>[\w]*):.(?<DataType>[\S+]*)(?<!;)?(?<SubType>.*)?;';
+                                $VariablesMatches = select-string -InputObject $ProcedureVariableDeclarationMatch.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
+                                if (![string]::IsNullOrEmpty($VariablesMatches)) {
+                                    $VariablesMatches | ForEach-Object {
+                                        $Variable = $_;
+                                        Write-BCALLog -Level VERBOSE "---->Variable $($Variable.Groups['VariableName'])" -logfile $LogFilePath
 
-                                #         $ALProcessVariable = New-Object PSObject
-                                #         $ALProcessVariable | Add-Member NoteProperty "Name" "$($Variable.Groups['VariableName'])"
-                                #         $ALProcessVariable | Add-Member NoteProperty "DataType" "$($Variable.Groups['DataType'])"
+                                        $ALProcessVariable = New-Object PSObject
+                                        $ALProcessVariable | Add-Member NoteProperty "Name" "$($Variable.Groups['VariableName'])"
+                                        $ALProcessVariable | Add-Member NoteProperty "DataType" "$($Variable.Groups['DataType'])"
 
-                                #         # https://regex101.com/r/ppW7tJ/1
-                                #         $SubType = $Variable.Groups['SubType'].Value.ToLower();
-                                #         if (![string]::IsNullOrEmpty($SubType) -or ($SubType -ne ";")) {
-                                #             if ($ALProcessVariable.DataType -ne 'label') {
-                                #                 # what about temp?
-                                #                 $ALProcessVariable | Add-Member NoteProperty "SubType" "$($Variable.Groups['SubType'])"
-                                #             }
-                                #             else {
-                                #                 # Labels are diffrent.....
-                                #                 $RegExLabel = "(?mi)'(?<Value>.*?)'(?<Properties>, .*?);"
-                                #                 $LabelMatches = select-string -InputObject $VariableDeclaration.Groups['Variables'].Value -Pattern $RegExLabel -AllMatches | ForEach-Object { $_.Matches }
-                                #                 $LabelMatch = $LabelMatches[0];
+                                        # https://regex101.com/r/ppW7tJ/1
+                                        $SubType = $Variable.Groups['SubType'].Value.ToLower();
+                                        if (![string]::IsNullOrEmpty($SubType) -or ($SubType -ne ";")) {
+                                            if ($ALProcessVariable.DataType -ne 'label') {
+                                                # what about temp?
+                                                $ALProcessVariable | Add-Member NoteProperty "SubType" "$($Variable.Groups['SubType'])"
+                                            }
+                                            else {
+                                                # Labels are diffrent.....
+                                                Write-BCALLog -Level VERBOSE "-----> is a label" -logfile $LogFilePath
+                                                $RegExLabel = "(?mi)'(?<Value>.*?)'(?<Properties>, .*?);"
+                                                $LabelMatches = select-string -InputObject $ProcedureVariableDeclarationMatch.Groups['Variables'].Value -Pattern $RegExLabel -AllMatches | ForEach-Object { $_.Matches }
+                                                $LabelMatch = $LabelMatches[0];
 
-                                #                 $ALProcessVariable | Add-Member NoteProperty "LabelValue" "$($LabelMatch.Groups['Value'])"
-                                #                 $ALProcessVariable | Add-Member NoteProperty "Properties" "$($LabelMatch.Groups['Properties'])"
-                                #             }
-                                #         }
-                                #     }
-                                #     $ALObjectProcedure = New-Object PSObject -Property $ALObjectVariable
+                                                $ALProcessVariable | Add-Member NoteProperty "LabelValue" "$($LabelMatch.Groups['Value'])"
+                                                $ALProcessVariable | Add-Member NoteProperty "Properties" "$($LabelMatch.Groups['Properties'])"
+                                            }
+                                        }
+                                    }
+                                    # $ALObjectProcedure = New-Object PSObject -Property $ALObjectVariable
+                                    $ALObjectProcedure | Add-Member NoteProperty "Variables" $ALProcessVariable
+                                }
+                                
+                                #endregion
                             }
 
                             $ALObjectProcedures += $ALObjectProcedure

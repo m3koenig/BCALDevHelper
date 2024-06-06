@@ -92,9 +92,11 @@ function Get-BCALObjects {
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
                     $RegExNamespace = 'namespace.?(?<Namespace>[\s\S\n]*?);';
-                    $NamespaceName = (select-string -InputObject $FileContent -Pattern $RegExNamespace -AllMatches | ForEach-Object { $_.Matches })[0].Groups['Namespace'].Value
-                    $ALObject | Add-Member NoteProperty "Namespace" "$($NamespaceName)"
-
+                    $Namespaces = (select-string -InputObject $FileContent -Pattern $RegExNamespace -AllMatches | ForEach-Object { $_.Matches })
+                    if ($null -ne $Namespaces) {
+                        $NamespaceName = $Namespaces[0].Groups['Namespace'].Value
+                        $ALObject | Add-Member NoteProperty "Namespace" "$($NamespaceName)"
+                    }
                     
                     Write-BCALLog -Level VERBOSE "--Read all used namespaces of the $($ObjectType.ToLower())..." -logfile $LogFilePath
                     $RegExUsingNamespaces = 'using.?(?<UsingNamespace>[\s\S\n]*?);';

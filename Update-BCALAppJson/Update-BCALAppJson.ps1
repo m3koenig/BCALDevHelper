@@ -57,8 +57,8 @@ function Update-BCALAppJson {
                 $AppJson.name = $AppName;
                 $AppJson.id = (New-Guid).Guid
 
-                $AppJson.idRanges[0].from = $AppIdRangeStart
-                $AppJson.idRanges[0].to = $AppIdRangeEnd
+                $AppJson.idRanges[0].from = [int]$AppIdRangeStart
+                $AppJson.idRanges[0].to =  [int]$AppIdRangeEnd
 
                 $AppJson | ConvertTo-Json | Out-File $AppAppJsonFilePath  
                 Write-Host "Update app.json done." -ForegroundColor Cyan

@@ -50,10 +50,22 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
         $startDate = Get-Date
         Write-BCALLog "Start: $($startDate)" -logfile $LogFilePath
 
-        $transUnits = Get-BCALXliffAsArray -XliffFilePath $XliffFilePath -LogFilePath $LogFilePath -copyFromSource:$copyFromSource
-    
+        
+        Write-BCALLog "Load xlf '$($XliffFilePath)'" -Level VERBOSE
+        $transUnits = Get-BCALXliffAsArray -XliffFilePath $XliffFilePath -LogFilePath $LogFilePath -copyFromSource:$copyFromSource        
+        Write-BCALLog "transUnit Count: $($transUnits.Count)" -Level VERBOSE
+
+        Write-BCALLog "Load AL source path '$($SrcDirectory)'" -Level VERBOSE
         $files = Get-ChildItem $SrcDirectory -Filter *.al -Recurse
-        $fileCount = $files.Count;
+
+        if ($files -is [array]) { 
+            $fileCount = $files.Count;
+        }
+        else {
+            $fileCount = 1;
+        }        
+        Write-BCALLog "AL Fiels: $($fileCount)" -Level VERBOSE
+        
         $currFile = 0;
         $changedPropertyComment = 0;
         $changedFiles = 0;

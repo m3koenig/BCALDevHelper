@@ -24,7 +24,8 @@ function Get-BCALXliffAsArray {
         $targetExist = $($transUnit.PSObject.Properties.Name.contains("target"))
         if ($targetExist) {
             # And Target is filled with a string
-            $targetExist = $transUnit.target.GetType() -eq "string"
+            $targetExist = [string]$transUnit.target.GetType() -eq "string"
+            # Write-Host "$($transUnit.source) - targetExist $($targetExist) - $($transUnit.target.GetType()) - $($transUnit.target.GetType() -eq "string")"
         }
 
         if ($targetExist) {

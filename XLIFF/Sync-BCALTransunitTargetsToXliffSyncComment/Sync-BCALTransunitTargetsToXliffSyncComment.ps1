@@ -64,7 +64,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
         else {
             $fileCount = 1;
         }        
-        Write-BCALLog "AL Fiels: $($fileCount)" -Level VERBOSE
+        Write-BCALLog "AL Fields: $($fileCount)" -Level VERBOSE
         
         $currFile = 0;
         $changedPropertyComment = 0;

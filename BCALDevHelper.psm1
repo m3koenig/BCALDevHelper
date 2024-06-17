@@ -22,5 +22,6 @@ Write-Host ">Hello $($myUsername)!" -ForegroundColor DarkCyan
 
 . (Join-Path $PSScriptRoot ".\XLIFF\Get-BCALXliffAsArray\Get-BCALXliffAsArray.ps1")
 . (Join-Path $PSScriptRoot ".\XLIFF\Sync-BCALTransunitTargetsToXliffSyncComment\Sync-BCALTransunitTargetsToXliffSyncComment.ps1")
+. (Join-Path $PSScriptRoot ".\XLIFF\Initialize-BCALXliffCommentsInAL/Initialize-BCALXliffCommentsInAL.ps1")
 
 . (Join-Path $PSScriptRoot ".\Update-BCALAppJson\Update-BCALAppJson.ps1")

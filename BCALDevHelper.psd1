@@ -71,6 +71,8 @@
             'Write-BCALLog',
             'Get-BCALObjects', 
 
+            ,'Initialize-BCALTableFieldCodeSummaries'
+
             'New-BCALMermaidClassDiagram', 
             'New-BCALMermaidFlowChart',
 

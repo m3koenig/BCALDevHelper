@@ -72,6 +72,7 @@
             'Get-BCALObjects', 
 
             ,'Initialize-BCALTableFieldCodeSummaries'
+            ,'Add-BCALTableFieldToolTips'
 
             'New-BCALMermaidClassDiagram', 
             'New-BCALMermaidFlowChart',

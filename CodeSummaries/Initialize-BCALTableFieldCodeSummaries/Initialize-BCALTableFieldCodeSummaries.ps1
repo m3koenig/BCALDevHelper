@@ -51,13 +51,15 @@ function Initialize-BCALTableFieldCodeSummaries {
                     $ObjectType = $FileContentObject.Groups['Type'].Value;
                 }
 
-                if ($ObjectType.ToLower() -ne 'table') {
-                    Write-BCALLog -Level VERBOSE "This is not a table. Only this function is for field tables!" -logfile $LogFilePath
+                if (($ObjectType.ToLower() -ne 'table') -and ($ObjectType.ToLower() -ne 'tableextension')) {
+                    Write-BCALLog -Level VERBOSE "This is not a table (or extension). This function is for table(extension) field!" -logfile $LogFilePath
                     continue
                 }
                 #endregion
 
                 #region Add Dummy Summary if missing any
+                
+                Write-BCALLog -Level VERBOSE "-->Add Dummy Summary for the field." -logfile $LogFilePath
                 [string]$RegExForPreFieldCode = "(?<SpaceBetween>[}|{][\s\n]*?)(?<Field>field[^sg])"
                 $replacement = @'
 ${SpaceBetween}

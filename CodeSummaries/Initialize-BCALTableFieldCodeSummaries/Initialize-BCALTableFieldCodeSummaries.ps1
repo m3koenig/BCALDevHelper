@@ -134,7 +134,10 @@ ${SpaceBetween}
 
                         # $CurrMatch.Groups['FieldName'].Value
                         # $CurrMatch.Groups['Field'].Value
-
+                        # $newGroupContent = @"
+                        # /// <summary>$($CurrMatch.Groups['SummaryValue'].Value)$($NewSummary)
+                        #         /// </summary>$($CurrMatch.Groups['SummaryDetails'].Value)$($CurrMatch.Groups['Field'].Value)
+                        # "@
                         return $newGroupContent
                     })
                 #endregion

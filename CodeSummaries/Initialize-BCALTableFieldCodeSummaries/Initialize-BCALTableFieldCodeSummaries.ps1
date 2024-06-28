@@ -1,4 +1,4 @@
-# TODO: Code Summary
+# TODO: Refactoring. Not nice. Should be reworked.
 function Initialize-BCALTableFieldCodeSummaries {
     [CmdletBinding()]
     param(
@@ -34,7 +34,7 @@ function Initialize-BCALTableFieldCodeSummaries {
                 }                
                 $newContent = $FileContent
                 
-                #region Handle Object Type
+                #region Is Table/Ext
                 [string]$regex = Get-BCALRegExObjectDefinition;
                 $FileContentObject = select-string -InputObject $newContent -Pattern $regex -AllMatches | ForEach-Object { $_.Matches }
 
@@ -74,14 +74,13 @@ ${SpaceBetween}
                 $RegexField = "(?<CodeSummary>\/\/\/\s\<summary\>(?<SummaryValue>[\s\S\n]*?)\/\/\/\s\<\/summary>(?<SummaryDetails>[\s\S\n]*?))?(?<Field>field\((?<FieldId>[0-9]*);(?<FieldName>.*);(?<FieldDataType>.*)\)[\n\s\S]*?{(?<FieldContent>[\s\n\S]*?)})";
                 $newContent = [regex]::Replace($newContent, $RegexField, { param($CurrMatch) 
                         Write-BCALLog -Level VERBOSE "-->Field: $($CurrMatch.Groups['FieldName'].Value)" -logfile $LogFilePath
-                        Write-BCALLog -Level VERBOSE "-->Field Match: $($CurrMatch)" -logfile $LogFilePath
+                        Write-BCALLog -Level VERBOSE "-->Field Code Summary Match: $($CurrMatch)" -logfile $LogFilePath
                         $newGroupContent = $CurrMatch;
 
                         $FieldContent = $CurrMatch.Groups['FieldContent'].Value
                         $NewSummary = '';
 
-
-                        #region Get FieldClass                        
+                        #region Get FieldClass
                         $RegExFieldClassProperty = '(?<PropertyLine>(?<Property>FieldClass)(?:\s?=\s?)('')?(?<Value>[\s\S\n]+?)('')?;)'
                         $FieldClassProperty = select-string -InputObject $FieldContent -Pattern $RegExFieldClassProperty -AllMatches | ForEach-Object { $_.Matches }
                         $ProperyFieldClassValue = "";
@@ -90,51 +89,51 @@ ${SpaceBetween}
                             Write-BCALLog -Level VERBOSE "--->FieldClass: $($ProperyFieldClassValue)" -logfile $LogFilePath
                             # only show not "Normal" fields
                             if ($ProperyFieldClassValue.ToLower() -ne "normal") { 
-                                $ProperyFieldClassValue = " ($($ProperyFieldClassValue))" 
-                            }else {
+                                $ProperyFieldClassValue = "$($ProperyFieldClassValue)" 
+                            }
+                            else {
                                 $ProperyFieldClassValue = "";
                             }
                         }
                         #endregion
 
-                        #region Add Caption    
+                        #region Get Caption    
                         $RegExCaptionProperty = '(?<PropertyLine>(?<Property>Caption)(?:\s?=\s?)''(?<Value>[\s\S\n]+?)''[,|;](?<Comment> Comment = ''(?<CommentValue>[\s\S\n]+?)'')?)'
                         $CaptionProperty = select-string -InputObject $FieldContent -Pattern $RegExCaptionProperty -AllMatches | ForEach-Object { $_.Matches }
                         if ($null -ne $CaptionProperty) {
                             Write-BCALLog -Level VERBOSE "--->CaptionProperty: $($CaptionProperty)" -logfile $LogFilePath
-                            $PropertyName = $CaptionProperty[0].Groups['Value'].Value;
-                            $CommentValue = $CaptionProperty[0].Groups['CommentValue'].Value;                            
-                            if ($null -ne $CommentValue) {
-                                $CaptionLine = "/// This Field$($ProperyFieldClassValue) is called '$PropertyName' ($($CommentValue))."
-
-                                $NewSummary += @"
-$CaptionLine
-"@
-                            }
-                            
-                            
+                            $CaptionPropertyValue = $CaptionProperty[0].Groups['Value'].Value;
+                            $CaptionPropertyCommentValue = $CaptionProperty[0].Groups['CommentValue'].Value;                            
                         }
                         #endregion
 
-                        #region Add Description
+                        #region Get Description
                         $RegExDescriptionProperty = '(?<PropertyLine>(?<Property>Description)(?:\s?=\s?)''(?<Value>[\s\S\n]+?)'';)'
                         $DescriptionProperty = select-string -InputObject $FieldContent -Pattern $RegExDescriptionProperty -AllMatches | ForEach-Object { $_.Matches }
                         if ($null -ne $DescriptionProperty) {
                             $ProperyDescriptionValue = $DescriptionProperty[0].Groups['Value'].Value;
                             Write-BCALLog -Level VERBOSE "--->ProperyDescriptionValue: $($ProperyDescriptionValue)" -logfile $LogFilePath
-                            $NewSummary += @"
-
-        /// <p>(Description: $($ProperyDescriptionValue))</p>
-"@
                         }
                         #endregion
 
-                        if (![string]::IsNullOrEmpty($NewSummary)) {
-                            $newGroupContent = @"
-/// <summary>$($CurrMatch.Groups['SummaryValue'].Value)$($NewSummary)
-        /// </summary>$($CurrMatch.Groups['SummaryDetails'].Value)$($CurrMatch.Groups['Field'].Value)
+                        $CurrentSummaryValue = $CurrMatch.Groups['SummaryValue'].Value
+
+                        $SynopsisInit = @"
+
+                        /// ---
+                        /// *<b>Synopsis:</b>
 "@
+                        $SynopsisSuffix = "*";
+
+                        $RegExSynopsis = '\n(?:[\s]*?)(?<Synopsis>[\s\/]* ---(?:[\s\S]*?)(?<SynopsisPrefix>\*<b>Synopsis:<\/b> )(?<SynopsisValue>(?:[\s\S]*?))(?<SynopsisSuffix>\*?)$)'
+                        $SynopsisMatch = select-string -InputObject $CurrentSummaryValue -Pattern $RegExSynopsis -AllMatches | ForEach-Object { $_.Matches }
+                        $CurrentSynopsis = ""
+                        if ($null -ne $SynopsisMatch) {
+                            $CurrentSynopsis = $SynopsisMatch[0].Groups['Synopsis'].Value;
                         }
+
+                        # $CurrMatch.Groups['FieldName'].Value
+                        # $CurrMatch.Groups['Field'].Value
 
                         return $newGroupContent
                     })

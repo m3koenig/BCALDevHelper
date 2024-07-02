@@ -25,25 +25,27 @@ function Get-BCALXliffAsArray {
         $transUnitTarget = ""
         $targetExist = $($transUnit.PSObject.Properties.Name.contains("target"))
         if ($targetExist) {
-            Write-BCALLog -Level VERBOSE "target node exists: $($targetExist)" -logfile $LogFilePath
+            Write-BCALLog -Level VERBOSE "->target node exists: $($targetExist)" -logfile $LogFilePath
             $targetNodeDataType = [string]$transUnit.target.GetType();
-            Write-BCALLog -Level VERBOSE "Target Node Data Type: $($targetNodeDataType)" -logfile $LogFilePath
+            Write-BCALLog -Level VERBOSE "->Target Node Data Type: $($targetNodeDataType)" -logfile $LogFilePath
             
             $targetExist = $targetNodeDataType.ToLower() -eq "string"
-            Write-BCALLog -Level VERBOSE "targetExist as string: $targetExist" -logfile $LogFilePath
-            Write-BCALLog -Level VERBOSE "transUnit.target: $($transUnit.target)" -logfile $LogFilePath
+            Write-BCALLog -Level VERBOSE "->targetExist as string: $targetExist" -logfile $LogFilePath
+            Write-BCALLog -Level VERBOSE "->transUnit.target: $($transUnit.target)" -logfile $LogFilePath
 
             if ($targetExist) {
                 $transUnitTarget = $transUnit.target
             }
             # Write-BCALLog -Level VERBOSE "$($transUnit.source) - targetExist $($targetExist) - $($transUnit.target.GetType()) - $($transUnit.target.GetType() -eq "string")"  -logfile $LogFilePath
 
-            $targetExist = $targetNodeDataType.ToLower() -eq "system.xml.xmlelement"
-            Write-BCALLog -Level VERBOSE "targetExist as System.Xml.XmlElement: $targetExist" -logfile $LogFilePath     
-            Write-BCALLog -Level VERBOSE "transUnit.target.InnerText $($transUnit.target.InnerText)"            
-            if ($targetExist) {
-                $transUnitTarget = $transUnit.target.InnerText
-            }       
+            if ([string]::IsNullOrEmpty($transUnitTarget)) {
+                $targetExist = $targetNodeDataType.ToLower() -eq "system.xml.xmlelement"
+                Write-BCALLog -Level VERBOSE "->targetExist as System.Xml.XmlElement: $targetExist" -logfile $LogFilePath     
+                Write-BCALLog -Level VERBOSE "->transUnit.target.InnerText $($transUnit.target.InnerText)"            
+                if ($targetExist) {
+                    $transUnitTarget = $transUnit.target.InnerText
+                }       
+            }
         }
 
         if ((!$targetExist) -and ($copyFromSource)) {

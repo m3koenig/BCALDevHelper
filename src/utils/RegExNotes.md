@@ -16,3 +16,11 @@
 ```PowerShell
 (?<PropertyLine>(?<Property>\w+)(?:\s?=\s?)(?<Value>[\s\S\n]+?);)
 ```
+
+
+# "?msi"?
+
+<!-- (?msi) match the remainder of the pattern with the following effective flags: gmsi
+m modifier: multi line. Causes ^ and $ to match the begin/end of each line (not only begin/end of string)
+s modifier: single line. Dot matches newline characters
+i modifier: insensitive. Case insensitive match (ignores case of [a-zA-Z]) -->

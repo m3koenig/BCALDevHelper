@@ -14,20 +14,20 @@ try {
 
 Write-Host ">Hello $($myUsername)!" -ForegroundColor DarkCyan
 
-. (Join-Path $PSScriptRoot ".\utils\Write-BCALLog.ps1")
-. (Join-Path $PSScriptRoot ".\utils\ALFiles\Get-BCALRegExObjectDefinition.ps1")
+. (Join-Path $PSScriptRoot ".\src\\utils\Write-BCALLog.ps1")
+. (Join-Path $PSScriptRoot ".\src\utils\ALFiles\Get-BCALRegExObjectDefinition.ps1")
 
-. (Join-Path $PSScriptRoot ".\Get-BCALObjects\Get-BCALObjects.ps1")
-. (Join-Path $PSScriptRoot ".\Mermaid\New-BCALMermaidClassDiagram\New-BCALMermaidClassDiagram.ps1")
-. (Join-Path $PSScriptRoot ".\Mermaid\New-BCALMermaidFlowChart\New-BCALMermaidFlowChart.ps1")
+. (Join-Path $PSScriptRoot ".\src\Get-BCALObjects\Get-BCALObjects.ps1")
+. (Join-Path $PSScriptRoot ".\src\Mermaid\New-BCALMermaidClassDiagram\New-BCALMermaidClassDiagram.ps1")
+. (Join-Path $PSScriptRoot ".\src\Mermaid\New-BCALMermaidFlowChart\New-BCALMermaidFlowChart.ps1")
 
-. (Join-Path $PSScriptRoot ".\CodeSummaries\Initialize-BCALTableFieldCodeSummaries\Initialize-BCALTableFieldCodeSummaries.ps1")
+. (Join-Path $PSScriptRoot ".\src\CodeSummaries\Update-BCALTableFieldSynopsis\Update-BCALTableFieldSynopsis.ps1")
 
-. (Join-Path $PSScriptRoot ".\ToolTips\Add-BCALTableFieldToolTips\Add-BCALTableFieldToolTips.ps1")
+. (Join-Path $PSScriptRoot ".\src\ToolTips\Add-BCALTableFieldToolTips\Add-BCALTableFieldToolTips.ps1")
 
 
-. (Join-Path $PSScriptRoot ".\XLIFF\Get-BCALXliffAsArray\Get-BCALXliffAsArray.ps1")
-. (Join-Path $PSScriptRoot ".\XLIFF\Sync-BCALTransunitTargetsToXliffSyncComment\Sync-BCALTransunitTargetsToXliffSyncComment.ps1")
-. (Join-Path $PSScriptRoot ".\XLIFF\Initialize-BCALXliffCommentsInAL/Initialize-BCALXliffCommentsInAL.ps1")
+. (Join-Path $PSScriptRoot ".\src\XLIFF\Get-BCALXliffAsArray\Get-BCALXliffAsArray.ps1")
+. (Join-Path $PSScriptRoot ".\src\XLIFF\Sync-BCALTransunitTargetsToXliffSyncComment\Sync-BCALTransunitTargetsToXliffSyncComment.ps1")
+. (Join-Path $PSScriptRoot ".\src\XLIFF\Initialize-BCALXliffCommentsInAL/Initialize-BCALXliffCommentsInAL.ps1")
 
-. (Join-Path $PSScriptRoot ".\Update-BCALAppJson\Update-BCALAppJson.ps1")
+. (Join-Path $PSScriptRoot ".\src\Update-BCALAppJson\Update-BCALAppJson.ps1")

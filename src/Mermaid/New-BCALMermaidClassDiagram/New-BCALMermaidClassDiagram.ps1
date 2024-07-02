@@ -16,7 +16,7 @@ function New-BCALMermaidClassDiagram {
     )
 
     begin {
-        . (Join-Path (get-item $PSScriptRoot).parent.FullName "\utils\Convert-TextToMermaidName.ps1")
+        . (Join-Path (get-item $PSScriptRoot).parent.FullName "src\\utils\Convert-TextToMermaidName.ps1")
     }
 
     process {

@@ -1,3 +1,20 @@
+<#
+.SYNOPSIS
+    Updates XML documentation comments for table or table extension fields in AL files. It adds a "synopsis" under the regular summary.
+.DESCRIPTION
+    Processes AL files in a specified directory to add or update summary comments for each table or table extension field. It scans files, identifies tables or table extensions, and ensures each field has a formatted summary including metadata such as caption, description, and field class. The updated content is saved back to the original files.
+    It will add the so called "synopsis" seperated with a line under the regular summary.
+    It will try to provide this structre:
+    > <Caption> / <Caption Comment> / <Description: DescriptionValue> / <Field Class if not normal>
+.PARAMETER SourceFilePath
+    The path to the directory containing AL files to process. Could also be one lonesome file.
+.PARAMETER LogFilePath
+    The path to the log file for verbose logging.
+.EXAMPLE
+    Update-BCALTableFieldSynopsis -SourceFilePath "C:\Source\BCALFiles"
+.EXAMPLE
+    Update-BCALTableFieldSynopsis -SourceFilePath "C:\Source\BCALFiles" -LogFilePath "C:\Logs\BCALUpdate.log"
+#>
 function Update-BCALTableFieldSynopsis {
     [CmdletBinding()]
     param(

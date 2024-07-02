@@ -66,7 +66,7 @@ function Get-BCALObjects {
 
                 # Get Object ObjectType, ID, Name 
                 # $regex = '^(\w+)\s(\d*)\s"(.*)"'
-                $regex = '(?<Type>\w+)\s(?<ID>\d*)\s"(?<Name>.*?)"(?:\s(extends)\s"(.*)")?'
+                $regex = '^(?<Type>\w+)\s(?<ID>\d*)\s"(?<Name>.*?)"(?:\s(extends)\s"(.*)")?'
 
                 $FileContentObject = select-string -InputObject $FileContent -Pattern $regex -AllMatches | ForEach-Object { $_.Matches }
                 

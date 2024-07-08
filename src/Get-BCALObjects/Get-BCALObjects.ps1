@@ -45,7 +45,10 @@ function Get-BCALObjects {
 
         Write-BCALLog -Level VERBOSE "Filter files with '$($filter)'" -logfile $LogFilePath
 
-        $ALFiles = Get-ChildItem $SourceFilePath -Filter $filter -Recurse 
+        $ALFiles = @(Get-ChildItem $SourceFilePath -Filter $filter -Recurse)
+        $ALFileCount = $ALFiles.Count
+        Write-BCALLog -Level VERBOSE "Files: $($ALFileCount)" -logfile $LogFilePath
+
         $ALFiles | ForEach-Object {
             $CurrFile = $_;
             Write-BCALLog -Level VERBOSE "$($CurrFile.Fullname)" -logfile $LogFilePath
@@ -66,13 +69,14 @@ function Get-BCALObjects {
 
                 # Get Object ObjectType, ID, Name 
                 # $regex = '^(\w+)\s(\d*)\s"(.*)"'
-                $regex = '^(?<Type>\w+)\s(?<ID>\d*)\s"(?<Name>.*?)"(?:\s(extends)\s"(.*)")?'
+                $RegExObjectDefinition = Get-BCALRegExObjectDefinition;
 
-                $FileContentObject = select-string -InputObject $FileContent -Pattern $regex -AllMatches | ForEach-Object { $_.Matches }
+                $FileContentObject = select-string -InputObject $FileContent -Pattern $RegExObjectDefinition -AllMatches | ForEach-Object { $_.Matches }
                 
                 if ([string]::IsNullOrEmpty($FileContentObject)) {
-                    Write-BCALLog -Level WARN "File Found but Object not recognized!" -logfile $LogFilePath
+                    Write-BCALLog -Level WARN "File was found but object is not recognized!" -logfile $LogFilePath                    
                     Write-BCALLog -Level WARN "File: $($CurrFile.FullName)" -logfile $LogFilePath
+                    # Write-BCALLog -Level WARN "This File Metadata was get: $($FileContentObject)" -logfile $LogFilePath
                 }
 
                 $AlObject = $null;
@@ -87,35 +91,38 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "Type" "$($ObjectType.ToLower())"
                     $ALObject | Add-Member NoteProperty "ID" "$($FileContentObject.Groups['ID'].Value)"
                     $ALObject | Add-Member NoteProperty "Name" "$($FileContentObject.Groups['Name'].Value)"
+                    $ALObject | Add-Member NoteProperty "Namespace" "$($FileContentObject.Groups['Namespace'].Value)"
                     $ALObject | Add-Member NoteProperty "Path" "$($CurrFile.FullName)"
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
-                    $RegExNamespace = 'namespace.?(?<Namespace>[\s\S\n]*?);';
-                    $Namespaces = (select-string -InputObject $FileContent -Pattern $RegExNamespace -AllMatches | ForEach-Object { $_.Matches })
-                    if ($null -ne $Namespaces) {
-                        $NamespaceName = $Namespaces[0].Groups['Namespace'].Value
-                        $ALObject | Add-Member NoteProperty "Namespace" "$($NamespaceName)"
-                    }
+                    #region Namespaces
+                    # $RegExNamespace = 'namespace.?(?<Namespace>[\s\S\n]*?);';
+                    # $Namespaces = (select-string -InputObject $FileContent -Pattern $RegExNamespace -AllMatches | ForEach-Object { $_.Matches })
+                    # if ($null -ne $Namespaces) {
+                    #     $NamespaceName = $Namespaces[0].Groups['Namespace'].Value
+                    #     $ALObject | Add-Member NoteProperty "Namespace" "$($NamespaceName)"
+                    # }
                     
-                    Write-BCALLog -Level VERBOSE "--Read all used namespaces of the $($ObjectType.ToLower())..." -logfile $LogFilePath
-                    $RegExUsingNamespaces = 'using.?(?<UsingNamespace>[\s\S\n]*?);';
-                    $UsingNamespacesNameMatches = (select-string -InputObject $FileContent -Pattern $RegExUsingNamespaces -AllMatches | ForEach-Object { $_.Matches })
-                    if (![string]::IsNullOrEmpty($UsingNamespacesNameMatches)) {
-                        $ALObjectUsingNamespaces = @()
+                    # Write-BCALLog -Level VERBOSE "--Read all used namespaces of the $($ObjectType.ToLower())..." -logfile $LogFilePath
+                    # $RegExUsingNamespaces = 'using.?(?<UsingNamespace>[\s\S\n]*?);';
+                    # $UsingNamespacesNameMatches = (select-string -InputObject $FileContent -Pattern $RegExUsingNamespaces -AllMatches | ForEach-Object { $_.Matches })
+                    # if (![string]::IsNullOrEmpty($UsingNamespacesNameMatches)) {
+                    #     $ALObjectUsingNamespaces = @()
 
-                        $UsingNamespacesNameMatches | ForEach-Object {
-                            $UsingNamespace = $_;
+                    #     $UsingNamespacesNameMatches | ForEach-Object {
+                    #         $UsingNamespace = $_;
 
-                            $ALObjectUsingNamespace = New-Object PSObject
-                            Write-BCALLog -Level VERBOSE "-->$($UsingNamespace.Groups['UsingNamespace'].Value)" -logfile $LogFilePath
+                    #         $ALObjectUsingNamespace = New-Object PSObject
+                    #         Write-BCALLog -Level VERBOSE "-->$($UsingNamespace.Groups['UsingNamespace'].Value)" -logfile $LogFilePath
 
-                            $ALObjectUsingNamespace | Add-Member NoteProperty "Namespace" "$($UsingNamespace.Groups['UsingNamespace'].Value)"
+                    #         $ALObjectUsingNamespace | Add-Member NoteProperty "Namespace" "$($UsingNamespace.Groups['UsingNamespace'].Value)"
                                 
-                            $ALObjectUsingNamespaces += $ALObjectUsingNamespace
-                        }
-                        $ALObject | Add-Member NoteProperty "UsingNamespaces" $ALObjectUsingNamespaces
-                    }
+                    #         $ALObjectUsingNamespaces += $ALObjectUsingNamespace
+                    #     }
+                    #     $ALObject | Add-Member NoteProperty "UsingNamespaces" $ALObjectUsingNamespaces
+                    # }
+                    #endregion
                     
 
                     #region Get Variable Blocks
@@ -172,11 +179,13 @@ function Get-BCALObjects {
                     }
                     Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
                     #endregion
+                    #region Table/Extension
 
                     if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {
                         Write-BCALLog -Level VERBOSE "--Read fields of the $($ObjectType.ToLower())..." -logfile $LogFilePath
 
-                        $RegexField = 'field\(([0-9]*);(.*);(.*)\)[\r\n]+(.*{([^}]*)})'
+                        # $RegexField = 'field\(([0-9]*);(.*);(.*)\)[\r\n]+(.*{([^}]*)})'
+                        $RegexField = "(?<CodeSummary>(?:\s)\/{3}\s\<summary\>(?<SummaryValue>[\s\S\n]*?)\/{3}\s\<\/summary>(?<SummaryDetails>[\s\S\n]*?))?(?<Field>field\((?<FieldId>[0-9]*);(?<FieldName>.*);(?<FieldDataType>.*)\)[\n\s\S]*?{(?<FieldContent>[\s\n\S]*?)})";
                         $TableFields = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }
 
                         Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
@@ -188,16 +197,16 @@ function Get-BCALObjects {
 
                                 $ALObjectField = New-Object PSObject
                                 Write-BCALLog -Level VERBOSE "---$($Field.Groups[1].Value) - $($Field.Groups[2].Value) - $($Field.Groups[3].Value)" -logfile $LogFilePath
-                                $AlObjectFieldName = $Field.Groups[2].Value.Trim().Replace("""", "");
-                                $AlFieldCode = $Field.Groups[4].Value;
+                                $AlObjectFieldName = $Field.Groups['FieldName'].Value.Trim().Replace("""", "");
+                                $AlFieldCode = $Field.Groups['FieldContent'].Value;
 
-                                $ALObjectField | Add-Member NoteProperty "ID" "$($Field.Groups[1].Value.ToInt32($Null))"
+                                $ALObjectField | Add-Member NoteProperty "ID" "$($Field.Groups['FieldId'].Value.ToInt32($Null))"
                                 $ALObjectField | Add-Member NoteProperty "Name" "$($AlObjectFieldName)"
-                                $ALObjectField | Add-Member NoteProperty "DataType" "$($Field.Groups[3].Value)"
+                                $ALObjectField | Add-Member NoteProperty "DataType" "$($Field.Groups['FieldDataType'].Value.Trim())"
                                 $ALObjectField | Add-Member NoteProperty "Code" "$($AlFieldCode)"
 
                                 # $RegexFieldProperties = '(\w+)(?:\s?=\s?)(.+);'
-                                $RegexFieldProperties = '(?:^|\s|\t)(\w+)(?:\s?=\s?)([\s\S\n]+?);'
+                                $RegexFieldProperties = '(?:^|\s|\t)(?<PropertyName>\w+)(?:\s?=\s?)(?<PropertyValue>[\s\S\n]+?);'
                                 $TableFieldProperties = select-string -InputObject $AlFieldCode -Pattern $RegexFieldProperties -AllMatches | ForEach-Object { $_.Matches }
 
                                 if (![string]::IsNullOrEmpty($TableFieldProperties)) {
@@ -207,17 +216,24 @@ function Get-BCALObjects {
                                     # $ALTableFieldProperty = New-Object PSObject
                                     $TableFieldProperties | ForEach-Object {
                                         $Property = $_;
+                                        Write-BCALLog -Level VERBOSE "------Check: $($Property.Groups['PropertyName']) - $($Property.Groups['PropertyValue'])" -logfile $LogFilePath
 
                                         $ALTableFieldProperty = Add-Property -TableProperty $Property
                                         $ALTableFieldProperties += $ALTableFieldProperty
 
+                                        Write-BCALLog -Level VERBOSE "------Check Table Relation" -logfile $LogFilePath
                                         $ALTableFieldProperty = Add-TableRelations -TableProperty $Property
                                         $ALTableFieldProperties += $ALTableFieldProperty
 
+                                        Write-BCALLog -Level VERBOSE "------Check CalcFields" -logfile $LogFilePath
                                         $ALTableFieldProperty = Add-Calcfields -TableProperty $Property
+
+                                        
+                                        Write-BCALLog -Level VERBOSE "------Add Property" -logfile $LogFilePath
                                         $ALTableFieldProperties += $ALTableFieldProperty
                                     }
                                 }
+                                Write-BCALLog -Level VERBOSE "----Add Properties" -logfile $LogFilePath
                                 # $ALObjectField | Add-Member PSObject $ALTableFieldProperties
                                 $ALObjectField | Add-Member NoteProperty "Properties" $ALTableFieldProperties
 
@@ -229,13 +245,15 @@ function Get-BCALObjects {
                             $ALObject | Add-Member NoteProperty "Fields" $ALObjectFields
                         }
                     }
+                    #endregion
 
+                    #region Codeunit
                     if ($ObjectType.ToLower() -eq 'codeunit') {
 
                         Write-BCALLog -Level VERBOSE "--Read procedures of the $($ObjectType.ToLower())..." -logfile $LogFilePath
 
-                        $RegexField = '(?mi)(?<prefix>procedure )(?<name>.*)(?<parameter>\(.*\))(?<return>.*$)(?<code>[\s\S\n]+?end;)'
-                        $Procedures = select-string -InputObject $FileContent -Pattern $RegexField -AllMatches | ForEach-Object { $_.Matches }
+                        $RegExProcedure = '(?mi)(?<prefix>procedure )(?<name>.*)(?<parameter>\(.*\))(?<return>.*$)(?<code>[\s\S\n]+?end;)'
+                        $Procedures = select-string -InputObject $FileContent -Pattern $RegExProcedure -AllMatches | ForEach-Object { $_.Matches }
 
                         
                         $ALObjectProcedures = @()
@@ -306,6 +324,12 @@ function Get-BCALObjects {
                         }
                         $ALObject | Add-Member NoteProperty "Procedures" $ALObjectProcedures
                         
+                    }
+                    #endregion
+
+                    if ($ObjectType.ToLower() -eq 'page') {
+
+                        Write-BCALLog -Level VERBOSE "--Read properties of the $($ObjectType.ToLower())..." -logfile $LogFilePath
                     }
                 }
                 $ALObjects += $AlObject

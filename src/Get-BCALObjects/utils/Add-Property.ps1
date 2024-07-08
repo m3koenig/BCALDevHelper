@@ -11,14 +11,14 @@ function Add-Property {
 
     
     process {
-        if ($TableProperty.Groups[1].ToString().ToLower()  -eq 'tablerelation') {
+        if ($TableProperty.Groups['PropertyName'].ToString().ToLower() -eq 'tablerelation') {
             return
         }
         
-        Write-BCALLog -Level VERBOSE "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])" -logfile $LogFilePath
+        Write-BCALLog -Level VERBOSE "-----Add Property" -logfile $LogFilePath
 
         $ALTableFieldProperty = New-Object PSObject
-        $ALTableFieldProperty | Add-Member NoteProperty "$($TableProperty.Groups[1])" "$($TableProperty.Groups[2])"
+        $ALTableFieldProperty | Add-Member NoteProperty "$($TableProperty.Groups['PropertyName'])" "$($TableProperty.Groups['PropertyValue'])"
 
         return $ALTableFieldProperty
     }

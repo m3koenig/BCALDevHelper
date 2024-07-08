@@ -10,13 +10,13 @@ function Add-Calcfields {
     }
 
     process {
-        if (($TableProperty.Groups[1]).ToString().ToLower() -ne 'calcformula') {
+        if (($TableProperty.Groups['PropertyName']).ToString().ToLower() -ne 'calcformula') {
             return
         }
         
-        Write-BCALLog -Level VERBOSE "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])" -logfile $LogFilePath
+        Write-BCALLog -Level VERBOSE "-----Add as Calcfield" -logfile $LogFilePath
 
-        [string]$FieldCalcformula = $TableProperty.Groups[2];
+        [string]$FieldCalcformula = $TableProperty.Groups['PropertyValue'];
         $ALTableFieldProperty = New-Object PSObject
         $ALTableFieldProperty | Add-Member NoteProperty "CalcformulaCode" "$($FieldCalcformula)"
 

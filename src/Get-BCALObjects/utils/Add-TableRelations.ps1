@@ -10,11 +10,11 @@ function Add-TableRelations {
     }
 
     process {
-        if (($TableProperty.Groups[1]).ToString().ToLower() -ne 'tablerelation') {
+        if (($TableProperty.Groups['PropertyName']).ToString().ToLower() -ne 'tablerelation') {
             return
         }
         
-        Write-BCALLog -Level VERBOSE "-----$($TableProperty.Groups[1]) - $($TableProperty.Groups[2])" -logfile $LogFilePath
+        Write-BCALLog -Level VERBOSE "-----Add as TableRelation" -logfile $LogFilePath
 
         [string]$TableRelationValue = $TableProperty.Groups[2];
         

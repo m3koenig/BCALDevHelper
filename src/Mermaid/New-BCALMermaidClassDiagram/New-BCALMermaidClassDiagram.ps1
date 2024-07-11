@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Creates an Text for Mermaid Diagram (https://mermaid-js.github.io/mermaid/#/n00b-gettingStarted) as ClassDiagram
 .Parameter SourceFilePath

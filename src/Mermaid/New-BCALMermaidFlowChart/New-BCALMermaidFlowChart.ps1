@@ -1,4 +1,4 @@
-# TODO: Docu
+﻿# TODO: Docu
 function New-BCALMermaidFlowChart {
     [CmdletBinding()]
     param(

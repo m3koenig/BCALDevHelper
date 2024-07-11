@@ -1,4 +1,4 @@
-# TODO: Update Tooltip. Not only add
+﻿# TODO: Update Tooltip. Not only add
 # TODO: not only a german replacement of the default translation (XLIF Comments)
 function Add-BCALTableFieldToolTips {
     [CmdletBinding()]

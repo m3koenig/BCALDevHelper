@@ -1,4 +1,4 @@
-function Add-Property {
+﻿function Add-Property {
     [CmdletBinding()]
     Param(
         $TableProperty,

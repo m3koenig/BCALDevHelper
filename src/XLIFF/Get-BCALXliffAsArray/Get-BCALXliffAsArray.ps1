@@ -1,4 +1,4 @@
-function Get-BCALXliffAsArray {
+﻿function Get-BCALXliffAsArray {
     [CmdletBinding()]
     Param(
         # Path of the XLIFF File

@@ -1,4 +1,4 @@
-function Add-Calcfields {
+﻿function Add-Calcfields {
     [CmdletBinding()]
     Param(
         $TableProperty,

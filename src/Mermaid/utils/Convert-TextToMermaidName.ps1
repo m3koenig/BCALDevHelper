@@ -1,4 +1,4 @@
-function Convert-TextToMermaidName {
+﻿function Convert-TextToMermaidName {
     [CmdletBinding()]
     [OutputType([int])]
     Param(

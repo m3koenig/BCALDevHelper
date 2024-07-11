@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Parses Business Central AL Object Files into an Powershell Object.
 .DESCRIPTION

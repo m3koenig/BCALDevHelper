@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     It provices flexible logging capabilities. It allows users to log messages with different log levels and provides options for outputting log messages to the console and/or a log file.
 

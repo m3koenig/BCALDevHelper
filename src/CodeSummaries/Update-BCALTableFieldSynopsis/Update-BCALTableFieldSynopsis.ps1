@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Updates XML documentation comments for table or table extension fields in AL files. It adds a "synopsis" under the regular summary.
 .DESCRIPTION

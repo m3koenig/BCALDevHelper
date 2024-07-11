@@ -36,7 +36,11 @@ function Initialize-BCALXliffCommentsInAL {
         [string]$ReplaceDefaultENUFieldToolTipWith = 'Gibt den Wert des Feldes "$3" an.'
     )
 
-    begin {}
+    begin {
+        Write-BCALLog -Level VERBOSE "To use this function, its neccasary to have the default Captions, Tooltips etc. in the file (use AZ AL DevTools Extension). Then it will add the XLIFF Comments!" -logfile $LogFilePath
+        Write-BCALLog -Level VERBOSE "It will also overwrite the current Comment! Please commit before and check the new values before you publish them!" -logfile $LogFilePath
+        Write-BCALLog -Level VERBOSE "---" -logfile $LogFilePath
+    }
 
     process {
         Write-BCALLog -Level VERBOSE "SourceFilePath $($SourceFilePath)" -logfile $LogFilePath
@@ -65,7 +69,8 @@ function Initialize-BCALXliffCommentsInAL {
                 $newContent = $FileContent
                 
                 #region Add XLIFF Sync Language Comment
-                [string]$TranslatablePropertiesRegEx = "((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)');"
+                Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment..." -logfile $LogFilePath
+                [string]$TranslatablePropertiesRegEx = "(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?));"
                 [string]$ReplacementForProperties = "`$1, Comment = '$($LanguageCode)=`$3';"
                 $newContent = [regex]::Replace($newContent, $TranslatablePropertiesRegEx, $ReplacementForProperties)
                 
@@ -75,7 +80,7 @@ function Initialize-BCALXliffCommentsInAL {
                 #endregion
                 
                 #region Replace ENU Default to language Default for Action
-                # if 
+                Write-BCALLog -Level VERBOSE "Replace ENU Default to language Default for Action..." -logfile $LogFilePath
                 if (![string]::IsNullOrEmpty($ReplaceDefaultENUFieldToolTipWith)) {
                     [string]$ChangeDefaultENUTranslationToDefaultLanguageCommentRegEx = "($($LanguageCode)=)(Specifies the value of the (.*?) field.)"
                     [string]$ReplacementForDefaultLanguageComment = "`$1$($ReplaceDefaultENUFieldToolTipWith)"

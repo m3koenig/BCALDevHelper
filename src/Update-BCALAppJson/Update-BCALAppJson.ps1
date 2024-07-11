@@ -1,4 +1,4 @@
-<#
+﻿<#
 .Description
 The `Update-BCALAppJson` function updates the `app.json` file and renames the workspace file for a Business Central AL project. It modifies the `app.json` file with new project details and renames the workspace file if a template file exists.
 .SYNOPSIS

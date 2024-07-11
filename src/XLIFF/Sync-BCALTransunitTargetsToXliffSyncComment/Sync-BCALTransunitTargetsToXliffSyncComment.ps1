@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Will add the translation from the XLIFF file to the AL source code as a comment.
 .DESCRIPTION

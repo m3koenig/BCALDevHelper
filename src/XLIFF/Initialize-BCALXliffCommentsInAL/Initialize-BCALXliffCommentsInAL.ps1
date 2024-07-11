@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Processes AL files to insert XLIFF comments for specific properties and labels and could updates default English action tooltips to a specified language.
 .DESCRIPTION

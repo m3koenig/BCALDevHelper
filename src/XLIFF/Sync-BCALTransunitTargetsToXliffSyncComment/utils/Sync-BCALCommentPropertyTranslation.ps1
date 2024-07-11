@@ -1,4 +1,4 @@
-function Sync-BCALCommentPropertyTranslation {
+﻿function Sync-BCALCommentPropertyTranslation {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)]

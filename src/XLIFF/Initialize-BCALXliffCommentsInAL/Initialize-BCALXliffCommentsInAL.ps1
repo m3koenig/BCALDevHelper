@@ -9,6 +9,8 @@ Specifies the root path where the AL files are located. This parameter is mandat
 Specifies the file path for logging verbose messages of this module.
 .PARAMETER LanguageCode
 The language code to use in the XLIFF comments. Default is 'de-DE'.
+.PARAMETER OverwriteLanguageComment
+Will overwrite the current XLIFF Language Comment with the Source.
 .PARAMETER ReplaceDefaultENUFieldToolTipWith
 Text to replace the default English field tooltips ("Specifies the value of the (.*?) field.") with the specified language tooltip. Default is the German 'Gibt den Wert des Feldes "$3" an.'.
 
@@ -33,6 +35,7 @@ function Initialize-BCALXliffCommentsInAL {
 
         [string]$LogFilePath,
         [string]$LanguageCode = 'de-DE',
+        [switch]$OverwriteLanguageComment,
         [string]$ReplaceDefaultENUFieldToolTipWith = 'Gibt den Wert des Feldes "$3" an.'
     )
 
@@ -68,12 +71,17 @@ function Initialize-BCALXliffCommentsInAL {
                 # Perform the regex replacement
                 $newContent = $FileContent
                 
-                #region Add XLIFF Sync Language Comment
-                Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment..." -logfile $LogFilePath
-                [string]$TranslatablePropertiesRegEx = "(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?));"
-                [string]$ReplacementForProperties = "`$1, Comment = '$($LanguageCode)=`$3';"
-                $newContent = [regex]::Replace($newContent, $TranslatablePropertiesRegEx, $ReplacementForProperties)
+                if ($OverwriteLanguageComment) {
+                    #region Update XLIFF Sync Language Comment
+                    Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment..." -logfile $LogFilePath
+                    [string]$TranslatablePropertiesRegEx = "(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?));"
+                    [string]$ReplacementForProperties = "`$1, Comment = '$($LanguageCode)=`$3';"
+                    $newContent = [regex]::Replace($newContent, $TranslatablePropertiesRegEx, $ReplacementForProperties)
+                    #endregion
+                }
                 
+                #region Add XLIFF Sync Language Comment
+                Write-BCALLog -Level VERBOSE "Update XLIFF Sync Language Comment..." -logfile $LogFilePath
                 [string]$TranslatableLabelRegEx = "((Label)\s*'([^']+?)');"
                 [string]$ReplacementForLabel = "`$1, Comment = '$($LanguageCode)=`$3';"
                 $newContent = [regex]::Replace($newContent, $TranslatableLabelRegEx, $ReplacementForLabel)                

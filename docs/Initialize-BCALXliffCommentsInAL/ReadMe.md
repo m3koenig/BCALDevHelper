@@ -16,6 +16,7 @@ It will not translating anything else. It only adds the comment with the default
 - Adds XLIFF comments to translatable properties and labels.
 - Optionally replaces default English field tooltips with a specified language version.
 - Logs detailed processing information to a specified log file.
+- Could overwrite the current translation with the source. 
 
 
 ## Notes

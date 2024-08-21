@@ -13,6 +13,8 @@ The language code to use in the XLIFF comments. Default is 'de-DE'.
 Will overwrite the current XLIFF Language Comment with the Source.
 .PARAMETER ReplaceDefaultENUFieldToolTipWith
 Text to replace the default English field tooltips ("Specifies the value of the (.*?) field.") with the specified language tooltip. Default is the German 'Gibt den Wert des Feldes "$3" an.'.
+.PARAMETER ReplaceDefaultENUActionToolTipWith
+Text to replace the default English action tooltips ("Executes the (.*?) action.") with the specified language tooltip. Default is the German 'Gibt den Wert des Feldes "$3" an.'.
 
 .EXAMPLE
 # This example processes AL files in the `C:\Projects\ALFiles` directory, logs messages to `C:\Logs\BCALLog.txt`, uses French for XLIFF comments, and replaces the default English tooltip with a French version.
@@ -36,7 +38,8 @@ function Initialize-BCALXliffCommentsInAL {
         [string]$LogFilePath,
         [string]$LanguageCode = 'de-DE',
         [switch]$OverwriteLanguageComment,
-        [string]$ReplaceDefaultENUFieldToolTipWith = 'Gibt den Wert des Feldes "$3" an.'
+        [string]$ReplaceDefaultENUFieldToolTipWith = 'Gibt den Wert des Feldes "$3" an.',
+        [string]$ReplaceDefaultENUActionToolTipWith = 'Führt die Aktion "$3" aus.'
     )
 
     begin {
@@ -71,28 +74,46 @@ function Initialize-BCALXliffCommentsInAL {
                 # Perform the regex replacement
                 $newContent = $FileContent
                 
+                [string]$TranslatablePropertiesRegEx = "(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')";
+
                 if ($OverwriteLanguageComment) {
-                    #region Update XLIFF Sync Language Comment
+                    #region Update XLIFF Sync Language Comment for properties
                     Write-BCALLog -Level VERBOSE "Update XLIFF Sync Language Comment..." -logfile $LogFilePath
-                    [string]$TranslatablePropertiesRegEx = "(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?));"
-                    [string]$ReplacementForProperties = "`$1, Comment = '$($LanguageCode)=`$3';"
-                    $newContent = [regex]::Replace($newContent, $TranslatablePropertiesRegEx, $ReplacementForProperties)
+                    [string]$TranslatablePropertiesWithCommentsRegEx = "$($TranslatablePropertiesRegEx)(?:, Comment\s*=\s*([\s\S\n]*?));"
+                    [string]$ReplacementForPropertyWithComment = "`$1, Comment = '$($LanguageCode)=`$3';"
+                    $newContent = [regex]::Replace($newContent, $TranslatablePropertiesWithCommentsRegEx, $ReplacementForPropertyWithComment)
                     #endregion
                 }
                 
-                #region Add XLIFF Sync Language Comment
-                Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment..." -logfile $LogFilePath
+                #region Add XLIFF Sync Language Comment for properties
+                Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment for translateable properties..." -logfile $LogFilePath
+                [string]$TranslatablePropertiesEndOfPropertyRegEx = "$($TranslatablePropertiesRegEx);"
+                [string]$ReplacementForProperty = "`$1, Comment = '$($LanguageCode)=`$3';"
+                $newContent = [regex]::Replace($newContent, $TranslatablePropertiesEndOfPropertyRegEx, $ReplacementForProperty)                
+                #endregion
+                
+                #region Add XLIFF Sync Language Comment for Labels
+                Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment for Labels..." -logfile $LogFilePath
                 [string]$TranslatableLabelRegEx = "((Label)\s*'([^']+?)');"
                 [string]$ReplacementForLabel = "`$1, Comment = '$($LanguageCode)=`$3';"
                 $newContent = [regex]::Replace($newContent, $TranslatableLabelRegEx, $ReplacementForLabel)                
                 #endregion
                 
+                #region Replace ENU Default to language Default for Tooltips
+                Write-BCALLog -Level VERBOSE "Replace ENU Default to language Default for Field Tooltips..." -logfile $LogFilePath
+                if (![string]::IsNullOrEmpty($ReplaceDefaultENUFieldToolTipWith)) {
+                    [string]$ChangeDefaultENUTranslationForFieldToDefaultLanguageCommentRegEx = "($($LanguageCode)=)(Specifies the value of the (.*?) field.)"
+                    [string]$ReplacementForDefaultLanguageCommentForField = "`$1$($ReplaceDefaultENUFieldToolTipWith)"
+                    $newContent = [regex]::Replace($newContent, $ChangeDefaultENUTranslationForFieldToDefaultLanguageCommentRegEx, $ReplacementForDefaultLanguageCommentForField)
+                }
+                #endregion
+
                 #region Replace ENU Default to language Default for Action
                 Write-BCALLog -Level VERBOSE "Replace ENU Default to language Default for Action..." -logfile $LogFilePath
-                if (![string]::IsNullOrEmpty($ReplaceDefaultENUFieldToolTipWith)) {
-                    [string]$ChangeDefaultENUTranslationToDefaultLanguageCommentRegEx = "($($LanguageCode)=)(Specifies the value of the (.*?) field.)"
-                    [string]$ReplacementForDefaultLanguageComment = "`$1$($ReplaceDefaultENUFieldToolTipWith)"
-                    $newContent = [regex]::Replace($newContent, $ChangeDefaultENUTranslationToDefaultLanguageCommentRegEx, $ReplacementForDefaultLanguageComment)
+                if (![string]::IsNullOrEmpty($ReplaceDefaultENUActionToolTipWith)) {
+                    [string]$ChangeDefaultENUTranslationForActionToDefaultLanguageCommentRegEx = "($($LanguageCode)=)(Executes the (.*?) action.)"
+                    [string]$ReplacementForDefaultLanguageCommentForAction = "`$1$($ReplaceDefaultENUActionToolTipWith)"
+                    $newContent = [regex]::Replace($newContent, $ChangeDefaultENUTranslationForActionToDefaultLanguageCommentRegEx, $ReplacementForDefaultLanguageCommentForAction)
                 }
                 #endregion
 

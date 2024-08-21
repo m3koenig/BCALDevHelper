@@ -73,7 +73,7 @@ function Initialize-BCALXliffCommentsInAL {
                 
                 if ($OverwriteLanguageComment) {
                     #region Update XLIFF Sync Language Comment
-                    Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment..." -logfile $LogFilePath
+                    Write-BCALLog -Level VERBOSE "Update XLIFF Sync Language Comment..." -logfile $LogFilePath
                     [string]$TranslatablePropertiesRegEx = "(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?));"
                     [string]$ReplacementForProperties = "`$1, Comment = '$($LanguageCode)=`$3';"
                     $newContent = [regex]::Replace($newContent, $TranslatablePropertiesRegEx, $ReplacementForProperties)
@@ -81,7 +81,7 @@ function Initialize-BCALXliffCommentsInAL {
                 }
                 
                 #region Add XLIFF Sync Language Comment
-                Write-BCALLog -Level VERBOSE "Update XLIFF Sync Language Comment..." -logfile $LogFilePath
+                Write-BCALLog -Level VERBOSE "Add XLIFF Sync Language Comment..." -logfile $LogFilePath
                 [string]$TranslatableLabelRegEx = "((Label)\s*'([^']+?)');"
                 [string]$ReplacementForLabel = "`$1, Comment = '$($LanguageCode)=`$3';"
                 $newContent = [regex]::Replace($newContent, $TranslatableLabelRegEx, $ReplacementForLabel)                

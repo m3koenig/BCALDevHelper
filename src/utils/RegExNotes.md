@@ -24,3 +24,23 @@
 m modifier: multi line. Causes ^ and $ to match the begin/end of each line (not only begin/end of string)
 s modifier: single line. Dot matches newline characters
 i modifier: insensitive. Case insensitive match (ignores case of [a-zA-Z]) -->
+
+
+# Translateable Properties
+
+## only the properties
+
+```PowerShell
+(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)');
+```
+
+## with comment
+
+```PowerShell
+(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?));
+```
+## With and Without comment
+
+```PowerShell
+(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?))*;
+```

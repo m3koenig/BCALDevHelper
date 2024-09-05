@@ -1,4 +1,4 @@
-# VS Code Tip
+﻿# VS Code Tip
 
 If you want to use those RegExes, they maybe have to be changed a bit.
 Here some known issues:
@@ -50,4 +50,10 @@ i modifier: insensitive. Case insensitive match (ignores case of [a-zA-Z]) -->
 
 ```PowerShell
 (?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?))*;
+```
+
+## Search for Special Content in Translateble Property
+
+```PowerShell
+(?<Property>Caption|ToolTip|InstructionalText)\s*=\s*'(?<Source>[^']+?)'(?:, Comment\s*=\s*)'(?<CommentValue>(?<Language>de-DE)=(?<LanguageValue>.*?(?<SearchContent>\(\*\)\s?).*?)')*;
 ```

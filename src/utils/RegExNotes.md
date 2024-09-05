@@ -1,4 +1,11 @@
-﻿# Field with Summaries
+# VS Code Tip
+
+If you want to use those RegExes, they maybe have to be changed a bit.
+Here some known issues:
+
+- `(?i)` etc. have to be removed
+
+# Field with Summaries
 
 ```PowerShell
 (?<CodeSummary>\/\/\/\s\<summary\>(?<SummaryValue>[\s\S\n]*?)\/\/\/\s\<\/summary>(?<SummaryDetails>[\s\S\n]*?))?(?<Field>field\((?<FieldId>[0-9]*);(?<FieldName>.*);(?<FieldDataType>.*)\)[\r\n]+.*(?<FieldContent>(?<PropertyContent>[^}][\s\S\n]*?(?<Property>Description)\s?=\s?'(?<PropertyValue>.*?)?';)?[\s\S\n]*?)})

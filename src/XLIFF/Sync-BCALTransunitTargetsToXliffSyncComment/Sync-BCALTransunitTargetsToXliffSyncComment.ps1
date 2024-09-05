@@ -161,7 +161,13 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
 
             if ($contentChanged) {
                 $changedFiles++
-                if (!$simulate) {
+                if (!$simulate) {  
+                    # TODO: Empty Lines are written...sorry
+                    # $NewLine = "`n";
+                    # $content += "--"
+                    # $content | Select-Object -skiplast 1 | Set-Content $file.FullName -Encoding UTF8
+                    # $content[0..($content.Length)] | Out-File $file.FullName -Encoding UTF8
+
                     Set-Content $file.FullName $content -Encoding UTF8
                 }
                 else {

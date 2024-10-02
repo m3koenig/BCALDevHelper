@@ -49,7 +49,7 @@ i modifier: insensitive. Case insensitive match (ignores case of [a-zA-Z]) -->
 ## With and Without comment
 
 ```PowerShell
-(?i)((Caption|ToolTip|InstructionalText)\s*=\s*'([^']+?)')(?:, Comment\s*=\s*([\s\S\n]*?))*;
+(?i)((?<Property>Caption|ToolTip|InstructionalText)\s*=\s*'(?<Value>[^']+?)')(?:, Comment\s*=\s*(?<Comment>[\s\S\n]*?))*;
 ```
 
 ## Search for Special Content in Translateble Property

@@ -8,6 +8,8 @@ You also had more Access to Tables. Here are Fields and their Properties and Cod
 This is the root path of the AL Files.
 .Parameter LogFilePath
 This is a File Path to an Log File.
+.Parameter DetailedMetadata
+Adds to the variables, tablerelations and alcfields of an object the the source object by "Source Object Type", "Source Object ID" and "Source Object Name"
 .EXAMPLE
 Get-BCALObjects "C:\temp\ALProject\App\src"
 .EXAMPLE
@@ -20,6 +22,16 @@ Get-BCALObjects "C:\temp\ALProject\App\src" | Where-Object {($_.Type -eq "table"
 Get-BCALObjects "C:\temp\ALProject\App\src" -VERBOSE| Where-Object {($_.Type -eq "table")} | Select-Object Type, ID, Path
 .EXAMPLE
 Get-BCALObjects "C:\temp\ALProject\App\src" | Where-Object {($_.Type -eq "table") -and ($_.ID -eq 50120)} | Select-Object Type, ID, Path
+.EXAMPLE
+# Example with the Variables with Detailed Metadata
+$Tables = Get-BCALObjects "C:\temp\ALProject\App\src" -DetailedMetadata | Where-Object {($_.Type -eq "table")}
+# All Variables with a record as SubType
+$Tables.Variables | Where-Object { $_.SubType -ne "" } | Select-Object SubType, "Source Object Type", "Source Object ID", "Source Object Name"
+.EXAMPLE
+# Example with the TableRelations with Detailed Metadata
+$Tables = Get-BCALObjects "C:\temp\ALProject\App\src" -DetailedMetadata | Where-Object {($_.Type -eq "table")}
+# All TableRelations with a record as SubType
+$Tables.Fields.Properties.TableRelations | Select-Object Table,"Source Object Type", "Source Object ID", "Source Object Name"
 #>
 function Get-BCALObjects {
     [CmdletBinding()]
@@ -27,7 +39,8 @@ function Get-BCALObjects {
         [Parameter(Mandatory = $true)]
         [string]$SourceFilePath,
 
-        [string]$LogFilePath
+        [string]$LogFilePath,
+        [switch]$DetailedMetadata
     )
 
     begin {
@@ -154,11 +167,13 @@ function Get-BCALObjects {
                                     $ALObjectVariable | Add-Member NoteProperty "Global" "$($IsGlobalDeclaration)"
 
                                     # https://regex101.com/r/ppW7tJ/1
-                                    $SubType = $Variable.Groups['SubType'].Value.ToLower();
-                                    if (![string]::IsNullOrEmpty($SubType) -or ($SubType -ne ";")) {
+                                    # Replace the " in the SubType
+                                    $SubType = $Variable.Groups['SubType'].Value -replace """";
+                                    $LowerSubType = $SubType.ToLower();
+                                    if (![string]::IsNullOrEmpty($LowerSubType) -or ($LowerSubType -ne ";")) {
                                         if ($ALObjectVariable.DataType -ne 'label') {
                                             # what about temp?
-                                            $ALObjectVariable | Add-Member NoteProperty "SubType" "$($Variable.Groups['SubType'])"
+                                            $ALObjectVariable | Add-Member NoteProperty "SubType" "$($SubType)"
                                         }
                                         else {
                                             # Labels are diffrent.....
@@ -169,6 +184,12 @@ function Get-BCALObjects {
                                             $ALObjectVariable | Add-Member NoteProperty "LabelValue" "$($LabelMatch.Groups['Value'])"
                                             $ALObjectVariable | Add-Member NoteProperty "Properties" "$($LabelMatch.Groups['Properties'])"
                                         }
+                                    }
+                                    if ($DetailedMetadata) {
+                                        $ALObjectVariable | Add-Member NoteProperty "Source Object Type" "$($ALObject.Type)"
+                                        $ALObjectVariable | Add-Member NoteProperty "Source Object ID" "$($ALObject.ID)"
+                                        $ALObjectVariable | Add-Member NoteProperty "Source Object Name" "$($ALObject.Name)"
+                                        $ALObjectVariable | Add-Member NoteProperty "Source Object Namespace" "$($ALObject.Namespace)"
                                     }
 
                                     $ALObjectVariables += $ALObjectVariable
@@ -221,8 +242,8 @@ function Get-BCALObjects {
                                         $ALTableFieldProperty = Add-Property -TableProperty $Property
                                         $ALTableFieldProperties += $ALTableFieldProperty
 
-                                        Write-BCALLog -Level VERBOSE "------Check Table Relation" -logfile $LogFilePath
-                                        $ALTableFieldProperty = Add-TableRelations -TableProperty $Property
+                                        Write-BCALLog -Level VERBOSE "------Check TableRelations" -logfile $LogFilePath
+                                        $ALTableFieldProperty = Add-TableRelations -TableProperty $Property -DetailedMetadata:$DetailedMetadata -ALObject $AlObject
                                         $ALTableFieldProperties += $ALTableFieldProperty
 
                                         Write-BCALLog -Level VERBOSE "------Check CalcFields" -logfile $LogFilePath

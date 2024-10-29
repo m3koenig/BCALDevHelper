@@ -2,7 +2,9 @@
     [CmdletBinding()]
     Param(
         $TableProperty,
-
+        [PSObject]$ALObject,
+        [switch]$DetailedMetadata,
+        
         [string]$LogFilePath
     )
 
@@ -34,7 +36,7 @@
         Write-BCALLog -Level VERBOSE "------IF Table Relation Value: $($TableRelationIfValue)" -logfile $LogFilePath
         if (![string]::IsNullOrEmpty($TableRelationIfValue)) {
             $TableRelationIfValue | ForEach-Object {
-                $FieldPropertyTableRelationValue = ($_.Groups[1].Value).Trim();
+                $FieldPropertyTableRelationValue = ($_.Groups[1].Value).Trim() -replace """";
 
                 $FieldPropertyTableRelationField = '';
                 if (![string]::IsNullOrEmpty($_.Groups[2].Value)) {
@@ -47,6 +49,14 @@
                 $TableRelation | Add-Member NoteProperty "Field" "$($FieldPropertyTableRelationField)"
                 # $TableRelation | Add-Member NoteProperty "Condition" "$($FieldPropertyTableRelationCondition)"
                 # $TableRelation | Add-Member NoteProperty "TableFilters" "$($FieldPropertyTableRelationFilters)"
+                
+                if ($DetailedMetadata) {
+                    $TableRelation | Add-Member NoteProperty "Source Object Type" "$($ALObject.Type)"
+                    $TableRelation | Add-Member NoteProperty "Source Object ID" "$($ALObject.ID)"
+                    $TableRelation | Add-Member NoteProperty "Source Object Name" "$($ALObject.Name)"
+                    $TableRelation | Add-Member NoteProperty "Source Object Namespace" "$($ALObject.Namespace)"
+                }
+
                 $TableRelations += $TableRelation
 
                 Write-BCALLog -Level VERBOSE "------IF Table Relation Table Value: $($FieldPropertyTableRelationValue)" -logfile $LogFilePath

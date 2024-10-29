@@ -2,6 +2,8 @@
     [CmdletBinding()]
     Param(
         $TableProperty,
+        [PSObject]$ALObject,
+        [switch]$DetailedMetadata,
 
         [string]$LogFilePath
     )
@@ -44,6 +46,13 @@
                 $TableFlowfield | Add-Member NoteProperty "Field" "$($FieldPropertyCalcformulaField)"
                 # $TableFlowfield | Add-Member NoteProperty "Condition" "$($FieldPropertyTableRelationCondition)"
                 # $TableFlowfield | Add-Member NoteProperty "TableFilters" "$($FieldPropertyTableRelationFilters)"
+                if ($DetailedMetadata) {
+                    $TableFlowfield | Add-Member NoteProperty "Source Object Type" "$($ALObject.Type)"
+                    $TableFlowfield | Add-Member NoteProperty "Source Object ID" "$($ALObject.ID)"
+                    $TableFlowfield | Add-Member NoteProperty "Source Object Name" "$($ALObject.Name)"
+                    $TableFlowfield | Add-Member NoteProperty "Source Object Namespace" "$($ALObject.Namespace)"
+                }
+
                 $TableCalcfields += $TableFlowfield
 
                 Write-BCALLog -Level VERBOSE "------IF Calcformula Table Value: $($FieldPropertyCalcformulaTable)" -logfile $LogFilePath

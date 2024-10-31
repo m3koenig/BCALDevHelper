@@ -144,7 +144,10 @@ function Get-BCALObjects {
 
                     $RegexVariableDeclarations = '(?mi)(?<=var[\r|\n])(?<Variables>[\s\S\n]+?)(?<ClosedBy>begin|(?:.*?)procedure |\})'
                     $AllVariableDeclarationMatches = select-string -InputObject $FileContent -Pattern $RegexVariableDeclarations -AllMatches | ForEach-Object { $_.Matches }
-                    if (![string]::IsNullOrEmpty($AllVariableDeclarationMatches)) {
+                    if ([string]::IsNullOrEmpty($AllVariableDeclarationMatches)) {
+                        $ALObject | Add-Member NoteProperty "HasVariables" $false
+                    }else {
+                        
                         $ALObjectVariables = @()
 
                         $AllVariableDeclarationMatches | ForEach-Object {
@@ -197,6 +200,7 @@ function Get-BCALObjects {
                             }
                         }
                         $ALObject | Add-Member NoteProperty "Variables" $ALObjectVariables
+                        $ALObject | Add-Member NoteProperty "HasVariables" $true
                     }
                     Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
                     #endregion
@@ -306,7 +310,9 @@ function Get-BCALObjects {
                                 # TODO: How to add this in the procedure (we have to go deeper!)
                                 $RegExVariables = '(?mi)(?!\s*var)^(?:[^\/]*?)(?<VariableName>[\w]*):.(?<DataType>[\S+]*)(?<!;)?(?<SubType>.*)?;';
                                 $VariablesMatches = select-string -InputObject $ProcedureVariableDeclarationMatch.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
-                                if (![string]::IsNullOrEmpty($VariablesMatches)) {
+                                if ([string]::IsNullOrEmpty($VariablesMatches)) {
+                                    $ALObjectProcedure | Add-Member NoteProperty "HasVariables" $false
+                                }else{
                                     $VariablesMatches | ForEach-Object {
                                         $Variable = $_;
                                         Write-BCALLog -Level VERBOSE "---->Variable $($Variable.Groups['VariableName'])" -logfile $LogFilePath
@@ -336,7 +342,9 @@ function Get-BCALObjects {
                                     }
                                     # $ALObjectProcedure = New-Object PSObject -Property $ALObjectVariable
                                     $ALObjectProcedure | Add-Member NoteProperty "Variables" $ALProcessVariable
+                                    $ALObjectProcedure | Add-Member NoteProperty "HasVariables" $true
                                 }
+
                                 
                                 #endregion
                             }

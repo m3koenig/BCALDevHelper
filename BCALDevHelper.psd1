@@ -75,6 +75,7 @@
             ,'Add-BCALTableFieldToolTips'
 
             'New-BCALMermaidClassDiagram', 
+            'New-BCALMermaidClassDiagramSimple',
             'New-BCALMermaidFlowChart',
 
             'Get-BCALXliffAsArray',

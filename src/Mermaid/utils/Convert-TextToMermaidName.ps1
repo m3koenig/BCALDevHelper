@@ -6,7 +6,7 @@
     )
 
     process {
-        $ConvertedText = $InputText
+        $ConvertedText = $InputText.Trim()
         $ConvertedText = $ConvertedText.Replace('.', '');
         $ConvertedText = $ConvertedText.Replace(' ', '_');
         $ConvertedText = $ConvertedText.Replace('-', '_');

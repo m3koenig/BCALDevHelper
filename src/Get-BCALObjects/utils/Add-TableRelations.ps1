@@ -1,4 +1,4 @@
-function Add-TableRelations {
+﻿function Add-TableRelations {
     [CmdletBinding()]
     Param(
         $TableProperty,

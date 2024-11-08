@@ -9,12 +9,16 @@
     The directory where the AL files are located.
 .PARAMETER XliffFilePath
     The path to the XLIFF file that contains the translations.
+.PARAMETER AddTranslationOptions
+    Add all found transalation options from the xlf that fitts to the source as a comment region.
 .Parameter copyFromSource
     Specifies whether translations should be copied from the source text (note: only when there is not already an existing translation in the target).
 .PARAMETER LogFilePath
     The path to the log file. If its not set the log will be written to the console.
 .PARAMETER simulate
     You want to check the result without changing the files? Set this switch and the script will only log the changes it would do. Its recommended to set the LogFilePath parameter to a file.
+.NOTES
+    If there are a translateable property, that is splitted over more than one line, it will not translated or updated. Or in clear words: This could cause errors!
 .EXAMPLE
     $ALFiles = "C:\Projects\BC\AL\Customer\App\src"
     $XMLFile = "C:\Projects\BC\AL\Customer\App\translations\Customer.de-DE.xlf"
@@ -29,6 +33,8 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
         
         [Parameter(Mandatory = $true)]
         [string]$XliffFilePath,
+
+        [switch]$AddTranslationOptions,
 
         [switch]$copyFromSource,
 
@@ -96,31 +102,49 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
 
             if ($TranslatablePropertyCount -eq 0) { Continue; }
 
+            $NewContent = New-Object System.Collections.Generic.List[System.Object]
             $fileLineCount = $content.Length;
+            # Loop tru lines of the file
             for ($fileLineNo = 0; $fileLineNo -lt $fileLineCount; $fileLineNo++) {
                 if ($fileLineNo % 50 -eq 0) {
                     $ProgressLineTitle = "Line ($($fileLineNo)/$($fileLineCount))";
                     Write-Progress -Activity $ProgressFileTitle  -Status "Total $currFilePercent% - $($ProgressLineTitle):" -PercentComplete $currFilePercent
-                }            
-
+                }
                 $currentLine = $content[$fileLineNo];
                 $currentLineToTranslate = ''
                 $currentLineToTranslate = select-string -InputObject $currentLine -Pattern $RegexToTranslate -AllMatches | ForEach-Object { $_.Matches }
 
-                if (![string]::IsNullOrEmpty($currentLineToTranslate)) {
+                if ([string]::IsNullOrEmpty($currentLineToTranslate)) {
+                    $NewContent.Add($currentLine);
+                }
+                else {
                     $toTranslate = $currentLineToTranslate.Groups['ToTranslate'];
-                    $transUnit = $transUnits | Where-Object { ($_.Source -eq $toTranslate) -and ($null -ne $_.Target) -and ($null -ne $_.TargetLanguage) -and ($_.Target -ne "") }                    
+                    $transUnit = $transUnits | Where-Object { ($_.Source -eq $toTranslate) -and ($null -ne $_.Target) -and ($null -ne $_.TargetLanguage) -and ($_.Target -ne "") }                   
                     Write-BCALLog "->Line: $($currentLineToTranslate)" -logfile $LogFilePath
                     Write-BCALLog "-->Source: $($toTranslate)" -logfile $LogFilePath
                 
                     $transUnitExist = $false;
+                    $transUnitOptionCount = 1;
                     $NewTranslation = $null;
                     if ($transUnit -is [array]) {
-                        $transUnitExist = $transUnit.Count -gt 0;
+                        # Found multiple translations!
+                        $transUnitOptions = $transUnit | Group-Object Source, Target | ForEach-Object { $_.Group } | Select-Object Source, Target | Sort-Object Target | Get-Unique -AsString                        
+                        $transUnitOptionCount = $transUnitOptions.Count;
+                        $transUnitExist = $transUnitOptionCount -gt 0;
                         if ($transUnitExist) {
-                            Write-BCALLog "-->Translations found (will pick first): $($transUnit.Count)" -logfile $LogFilePath
+                            Write-BCALLog "-->Translations found (will pick first of xlf transunit entry): $($transUnitOptions.Count)" -logfile $LogFilePath
                             $NewTranslation = [string]$transUnit[0].Target
                             $LanguageCode = [string]$transUnit[0].TargetLanguage
+
+                            # TODO: How to get, if one of the options is my current translation?! 
+                            # TODO: $LanguageCode ...
+                            $transUnitOptions | ForEach-Object {
+                                $CheckLine = Sync-BCALCommentPropertyTranslation -PropertyLine $currentLine -LanguageCode $LanguageCode -NewTranslation $_.Target -LogFilePath $LogFilePath
+                                if ($content[$fileLineNo] -eq $CheckLine) {
+                                    Write-BCALLog "--->Found Translation in the options: $($_.Target)" -logfile $LogFilePath
+                                    $NewTranslation = $_.Target;
+                                }
+                            }
                         }
                     }
                     else {
@@ -139,7 +163,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                         try {
                             $currentLine = Sync-BCALCommentPropertyTranslation -PropertyLine $currentLine -LanguageCode $LanguageCode -NewTranslation $NewTranslation -LogFilePath $LogFilePath
                         }
-                        catch [Exception] {                    
+                        catch [Exception] {
                             Write-BCALLog "-->Error with Sync for  '$($currentLineToTranslate)'!" -logfile $LogFilePath
                             Write-BCALLog "-->$($_.Message)" -logfile $LogFilePath
                             throw $_
@@ -150,11 +174,33 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
 
                         if ($content[$fileLineNo] -ne $currentLine) {
                             $changedPropertyComment++
-                            $contentChanged = $true
-                            if (!$simulate) {
-                                $content[$fileLineNo] = $currentLine;
-                            }                    
+                            $contentChanged = $true              
                         }   
+                        
+                        $NewContent.Add($currentLine);
+
+                        #region Multiple translation marker
+                        if ($AddTranslationOptions) { 
+                            if ($transUnitOptionCount -gt 1) {
+                                Write-BCALLog "-->Because there are more translations of this, here are the other found options:" -logfile $LogFilePath
+                            
+                                $NewContent.Add("// #region Translation Options");
+                                $transUnitOptions | ForEach-Object {   
+                                    $transUnitOption = $_;
+                                    try {
+                                        $transUnitOptionLine = Sync-BCALCommentPropertyTranslation -PropertyLine $currentLine -LanguageCode $LanguageCode -NewTranslation $transUnitOption.Target -LogFilePath $LogFilePath                                    
+                                        $NewContent.Add("// $($transUnitOptionLine)");
+                                    }
+                                    catch {
+                                        Write-BCALLog "--->Error with Sync in Multiple translation marker for'$($currentLineToTranslate)'!" -logfile $LogFilePath
+                                        Write-BCALLog "--->$($_.Message)" -logfile $LogFilePath
+                                        throw $_
+                                    }
+                                }
+                                $NewContent.Add("// #endregion Translation Options");
+                            }
+                        }
+                        #endregion Multiple translation marker                        
                     }
                 }
             }
@@ -168,7 +214,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                     # $content | Select-Object -skiplast 1 | Set-Content $file.FullName -Encoding UTF8
                     # $content[0..($content.Length)] | Out-File $file.FullName -Encoding UTF8
 
-                    Set-Content $file.FullName $content -Encoding UTF8
+                    Set-Content $file.FullName $NewContent -Encoding UTF8
                 }
                 else {
                     Write-BCALLog "$($file.Basename) would change but not saved because of simulate switch!" -logfile $LogFilePath

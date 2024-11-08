@@ -103,7 +103,7 @@ function New-BCALMermaidClassDiagramSimple {
         foreach ($MarkdownRelation in ($MarkdownRelations)) {
             $MarkdownRelationLine = "  "
 
-            $MarkdownRelationLine += "$($MarkdownRelation.FromObjectType)"
+            $MarkdownRelationLine += "$($MarkdownRelation.FromObjectType)_"
             $MarkdownRelationLine += "$((Convert-TextToMermaidName $MarkdownRelation.From))"
 
             switch ($MarkdownRelation.LinkType) {
@@ -112,7 +112,7 @@ function New-BCALMermaidClassDiagramSimple {
                 Default { $MarkdownRelationLine += " --> "; }
             }
             
-            $MarkdownRelationLine += "$($MarkdownRelation.ToObjectType)"
+            $MarkdownRelationLine += "$($MarkdownRelation.ToObjectType)_"
             $MarkdownRelationLine += "$((Convert-TextToMermaidName $MarkdownRelation.To))"
             $MarkdownRelationLine += "$($NextLine)"
 

@@ -107,6 +107,14 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "Namespace" "$($FileContentObject.Groups['Namespace'].Value)"
                     $ALObject | Add-Member NoteProperty "Path" "$($CurrFile.FullName)"
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
+
+                    $ALObject | Add-Member NoteProperty "HasVariables" $false
+
+                    # Properties only for tables and tableextensions
+                    if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {                        
+                        $ALObject | Add-Member NoteProperty "Fields" @()
+                    }
+
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
                     #region Namespaces
@@ -144,9 +152,7 @@ function Get-BCALObjects {
 
                     $RegexVariableDeclarations = '(?mi)(?<=var[\r|\n])(?<Variables>[\s\S\n]+?)(?<ClosedBy>begin|(?:.*?)procedure |\})'
                     $AllVariableDeclarationMatches = select-string -InputObject $FileContent -Pattern $RegexVariableDeclarations -AllMatches | ForEach-Object { $_.Matches }
-                    if ([string]::IsNullOrEmpty($AllVariableDeclarationMatches)) {
-                        $ALObject | Add-Member NoteProperty "HasVariables" $false
-                    }else {
+                    if (![string]::IsNullOrEmpty($AllVariableDeclarationMatches)) {
                         
                         $ALObjectVariables = @()
 
@@ -209,7 +215,7 @@ function Get-BCALObjects {
                             }
                         }
                         $ALObject | Add-Member NoteProperty "Variables" $ALObjectVariables
-                        $ALObject | Add-Member NoteProperty "HasVariables" $true
+                        $ALObject.HasVariables = $true
                     }
                     Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
                     #endregion
@@ -275,8 +281,7 @@ function Get-BCALObjects {
                             }
                             Write-BCALLog -Level VERBOSE "++++++++++++++++++++++++++" -logfile $LogFilePath
 
-
-                            $ALObject | Add-Member NoteProperty "Fields" $ALObjectFields
+                            $ALObject.Fields = $ALObjectFields
                         }
                     }
                     #endregion

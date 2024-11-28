@@ -1,4 +1,4 @@
-﻿# BCALDevHelper
+# BCALDevHelper
 
 ## Welcome to my "**B**usiness **C**entral **AL** **Dev**eloper **Helper**" PowerShell Module!
 

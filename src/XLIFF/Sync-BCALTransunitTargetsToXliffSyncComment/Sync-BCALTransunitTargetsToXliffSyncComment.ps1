@@ -85,7 +85,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
             $content = Get-Content $file.FullName -Encoding UTF8
             Write-BCALLog "->Object Content: $($content.Length) lines" -logfile $LogFilePath
 
-            $RegexToTranslate = '(?mi)(?<Type>(?: Caption )|(?: Label )|(?: ToolTip)|(?: OptionCaption ))(?:=.?'')(?<ToTranslate>.*?)(?:'')'
+            $RegexToTranslate = '(?mi)(?<Type>(?: Caption )|(?: Label )|(?: ToolTip)|(?: OptionCaption ))(?:=?.?'')(?<ToTranslate>.*?)(?:'')'
             $fileContentTranslatables = select-string -InputObject $content -Pattern $RegexToTranslate -AllMatches | ForEach-Object { $_.Matches }
             Write-BCALLog "->translatable: $($fileContentTranslatables)" -logfile $LogFilePath
             

@@ -18,10 +18,11 @@
         
         Write-BCALLog -Level VERBOSE "-----Add as TableRelation" -logfile $LogFilePath
 
-        [string]$TableRelationValue = $TableProperty.Groups[2];
+        [string]$TableRelationValue = $TableProperty.Groups['PropertyValue'];
         
         $ALTableRelationProperty = New-Object PSObject
-        $ALTableRelationProperty | Add-Member NoteProperty "TableRelationCode" "$($TableRelationValue)"
+        $ALTableRelationProperty | Add-Member NoteProperty "TableRelationCode" "$($TableRelationValue)"        
+        $ALTableRelationProperty | Add-Member NoteProperty "TableRelations" @()
 
         $TableRelations = @()
 
@@ -67,7 +68,7 @@
         }
 
         # Write-BCALLog -Level Host $TableRelations -logfile $LogFilePath
-        $ALTableRelationProperty | Add-Member NoteProperty "TableRelations" $TableRelations
+        $ALTableRelationProperty.TableRelations = $TableRelations
         
         return $ALTableRelationProperty
     }

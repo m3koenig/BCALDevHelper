@@ -246,6 +246,7 @@ function Get-BCALObjects {
                                 $ALObjectField | Add-Member NoteProperty "Code" "$($AlFieldCode)"
 
                                 # $RegexFieldProperties = '(\w+)(?:\s?=\s?)(.+);'
+                                # All Properties with Name and the Value
                                 $RegexFieldProperties = '(?:^|\s|\t)(?<PropertyName>\w+)(?:\s?=\s?)(?<PropertyValue>[\s\S\n]+?);'
                                 $TableFieldProperties = select-string -InputObject $AlFieldCode -Pattern $RegexFieldProperties -AllMatches | ForEach-Object { $_.Matches }
 
@@ -260,7 +261,7 @@ function Get-BCALObjects {
 
                                         $ALTableFieldProperty = Add-Property -TableProperty $Property
                                         $ALTableFieldProperties += $ALTableFieldProperty
-
+                                        # Add-TableRelation if it is one
                                         Write-BCALLog -Level VERBOSE "------Check TableRelations" -logfile $LogFilePath
                                         $ALTableFieldProperty = Add-TableRelations -TableProperty $Property -DetailedMetadata:$DetailedMetadata -ALObject $AlObject
                                         $ALTableFieldProperties += $ALTableFieldProperty
@@ -273,9 +274,10 @@ function Get-BCALObjects {
                                         $ALTableFieldProperties += $ALTableFieldProperty
                                     }
                                 }
+
                                 Write-BCALLog -Level VERBOSE "----Add Properties" -logfile $LogFilePath
-                                # $ALObjectField | Add-Member PSObject $ALTableFieldProperties
                                 $ALObjectField | Add-Member NoteProperty "Properties" $ALTableFieldProperties
+                                
 
                                 $ALObjectFields += $ALObjectField
                             }

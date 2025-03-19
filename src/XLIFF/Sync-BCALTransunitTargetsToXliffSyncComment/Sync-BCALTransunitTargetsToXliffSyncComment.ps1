@@ -85,7 +85,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
             $content = Get-Content $file.FullName -Encoding UTF8
             Write-BCALLog "->Object Content: $($content.Length) lines" -logfile $LogFilePath
 
-            $RegexToTranslate = '(?mi)(?<Type>(?: Caption )|(?: Label )|(?: ToolTip)|(?: OptionCaption ))(?:=.?'')(?<ToTranslate>.*?)(?:'')'
+            $RegexToTranslate = '(?mi)(?<Type>(?: Caption )|(?: Label )|(?: ToolTip)|(?: OptionCaption ))(?:=?.?'')(?<ToTranslate>.*?)(?:'')'
             $fileContentTranslatables = select-string -InputObject $content -Pattern $RegexToTranslate -AllMatches | ForEach-Object { $_.Matches }
             Write-BCALLog "->translatable: $($fileContentTranslatables)" -logfile $LogFilePath
             
@@ -127,6 +127,7 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                     $transUnitOptionCount = 1;
                     $NewTranslation = $null;
                     if ($transUnit -is [array]) {
+                        Write-BCALLog "--> Found multiple translations!" -logfile $LogFilePath
                         # Found multiple translations!
                         $transUnitOptions = $transUnit | Group-Object Source, Target | ForEach-Object { $_.Group } | Select-Object Source, Target | Sort-Object Target | Get-Unique -AsString                        
                         $transUnitOptionCount = $transUnitOptions.Count;
@@ -153,6 +154,9 @@ function Sync-BCALTransunitTargetsToXliffSyncComment {
                             Write-BCALLog "-->Translation found: $($transUnit.Target)" -logfile $LogFilePath
                             $NewTranslation = [string]$transUnit.Target
                             $LanguageCode = [string]$transUnit.TargetLanguage
+                        } else {
+                            Write-BCALLog "-->No translation found!" -logfile $LogFilePath                            
+                            $NewContent.Add($currentLine);
                         }
                     }
                 

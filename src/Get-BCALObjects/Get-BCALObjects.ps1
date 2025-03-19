@@ -107,6 +107,14 @@ function Get-BCALObjects {
                     $ALObject | Add-Member NoteProperty "Namespace" "$($FileContentObject.Groups['Namespace'].Value)"
                     $ALObject | Add-Member NoteProperty "Path" "$($CurrFile.FullName)"
                     $ALObject | Add-Member NoteProperty "Extends" "$($FileContentObject.Groups[5].Value)"
+
+                    $ALObject | Add-Member NoteProperty "HasVariables" $false
+
+                    # Properties only for tables and tableextensions
+                    if (($ObjectType.ToLower() -eq 'table') -or ($ObjectType.ToLower() -eq 'tableextension')) {                        
+                        $ALObject | Add-Member NoteProperty "Fields" @()
+                    }
+
                     # $ALObject | Add-Member NoteProperty "Object" "$($FileContent)"
 
                     #region Namespaces
@@ -144,9 +152,7 @@ function Get-BCALObjects {
 
                     $RegexVariableDeclarations = '(?mi)(?<=var[\r|\n])(?<Variables>[\s\S\n]+?)(?<ClosedBy>begin|(?:.*?)procedure |\})'
                     $AllVariableDeclarationMatches = select-string -InputObject $FileContent -Pattern $RegexVariableDeclarations -AllMatches | ForEach-Object { $_.Matches }
-                    if ([string]::IsNullOrEmpty($AllVariableDeclarationMatches)) {
-                        $ALObject | Add-Member NoteProperty "HasVariables" $false
-                    }else {
+                    if (![string]::IsNullOrEmpty($AllVariableDeclarationMatches)) {
                         
                         $ALObjectVariables = @()
 
@@ -157,17 +163,24 @@ function Get-BCALObjects {
                             # only when after "var" is "begin", they are global variables
                             $IsGlobalDeclaration = $VariableDeclaration.Groups['ClosedBy'].Value -ne 'begin'
                             
+                            # The Text of the label is also get as "SubType". Handling later
                             $RegExVariables = '(?mi)(?!\s*var)^(?:[^\/]*?)(?<VariableName>[\w]*):.(?<DataType>[\S+]*)(?<!;)?(?<SubType>.*)?;';
-                            $VariablesMatches = select-string -InputObject $VariableDeclaration.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
-                            if (![string]::IsNullOrEmpty($VariablesMatches)) {
-                                $VariablesMatches | ForEach-Object {
+                            $AllVariablesMatches = select-string -InputObject $VariableDeclaration.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
+                            if (![string]::IsNullOrEmpty($AllVariablesMatches)) {
+                                # Write-Host "---> $($ALObject.Name) $($ALObject.Type) | $($AllVariablesMatches)" -ForegroundColor Cyan
+                                # Write-Host "---> $($AllVariablesMatches -is [array])"
+                                $AllVariablesMatches | ForEach-Object {
                                     $Variable = $_;
-                                    Write-BCALLog -Level VERBOSE "--->Variable $($Variable.Groups['VariableName'])" -logfile $LogFilePath
+                                    Write-BCALLog -Level VERBOSE "--->Variable $($Variable.Groups['VariableName']) ($($Variable.Groups['DataType']))" -logfile $LogFilePath
 
                                     $ALObjectVariable = New-Object PSObject
                                     $ALObjectVariable | Add-Member NoteProperty "Name" "$($Variable.Groups['VariableName'])"
                                     $ALObjectVariable | Add-Member NoteProperty "DataType" "$($Variable.Groups['DataType'])"
                                     $ALObjectVariable | Add-Member NoteProperty "Global" "$($IsGlobalDeclaration)"
+
+                                    $ALObjectVariable | Add-Member NoteProperty "SubType" ""
+                                    $ALObjectVariable | Add-Member NoteProperty "LabelValue" ""
+                                    $ALObjectVariable | Add-Member NoteProperty "LabelProperties" ""
 
                                     # https://regex101.com/r/ppW7tJ/1
                                     # Replace the " in the SubType
@@ -176,16 +189,18 @@ function Get-BCALObjects {
                                     if (![string]::IsNullOrEmpty($LowerSubType) -or ($LowerSubType -ne ";")) {
                                         if ($ALObjectVariable.DataType -ne 'label') {
                                             # what about temp?
-                                            $ALObjectVariable | Add-Member NoteProperty "SubType" "$($SubType)"
+                                            $ALObjectVariable.SubType = "$($SubType)"
                                         }
                                         else {
+                                            Write-BCALLog -Level VERBOSE "---->Label..." -logfile $LogFilePath
+
                                             # Labels are diffrent.....
-                                            $RegExLabel = "(?mi)'(?<Value>.*?)'(?<Properties>, .*?);"
+                                            $RegExLabel = "(?mi)'(?<Value>.*?)'(?<Properties>, .*?)?;"
                                             $LabelMatches = select-string -InputObject $VariableDeclaration.Groups['Variables'].Value -Pattern $RegExLabel -AllMatches | ForEach-Object { $_.Matches }
                                             $LabelMatch = $LabelMatches[0];
 
-                                            $ALObjectVariable | Add-Member NoteProperty "LabelValue" "$($LabelMatch.Groups['Value'])"
-                                            $ALObjectVariable | Add-Member NoteProperty "Properties" "$($LabelMatch.Groups['Properties'])"
+                                            $ALObjectVariable.LabelValue = "$($LabelMatch.Groups['Value'])"
+                                            $ALObjectVariable.LabelProperties = "$($LabelMatch.Groups['Properties'])"
                                         }
                                     }
                                     if ($DetailedMetadata) {
@@ -200,7 +215,7 @@ function Get-BCALObjects {
                             }
                         }
                         $ALObject | Add-Member NoteProperty "Variables" $ALObjectVariables
-                        $ALObject | Add-Member NoteProperty "HasVariables" $true
+                        $ALObject.HasVariables = $true
                     }
                     Write-BCALLog -Level VERBOSE "----------------------" -logfile $LogFilePath
                     #endregion
@@ -231,6 +246,7 @@ function Get-BCALObjects {
                                 $ALObjectField | Add-Member NoteProperty "Code" "$($AlFieldCode)"
 
                                 # $RegexFieldProperties = '(\w+)(?:\s?=\s?)(.+);'
+                                # All Properties with Name and the Value
                                 $RegexFieldProperties = '(?:^|\s|\t)(?<PropertyName>\w+)(?:\s?=\s?)(?<PropertyValue>[\s\S\n]+?);'
                                 $TableFieldProperties = select-string -InputObject $AlFieldCode -Pattern $RegexFieldProperties -AllMatches | ForEach-Object { $_.Matches }
 
@@ -245,7 +261,7 @@ function Get-BCALObjects {
 
                                         $ALTableFieldProperty = Add-Property -TableProperty $Property
                                         $ALTableFieldProperties += $ALTableFieldProperty
-
+                                        # Add-TableRelation if it is one
                                         Write-BCALLog -Level VERBOSE "------Check TableRelations" -logfile $LogFilePath
                                         $ALTableFieldProperty = Add-TableRelations -TableProperty $Property -DetailedMetadata:$DetailedMetadata -ALObject $AlObject
                                         $ALTableFieldProperties += $ALTableFieldProperty
@@ -258,16 +274,16 @@ function Get-BCALObjects {
                                         $ALTableFieldProperties += $ALTableFieldProperty
                                     }
                                 }
+
                                 Write-BCALLog -Level VERBOSE "----Add Properties" -logfile $LogFilePath
-                                # $ALObjectField | Add-Member PSObject $ALTableFieldProperties
                                 $ALObjectField | Add-Member NoteProperty "Properties" $ALTableFieldProperties
+                                
 
                                 $ALObjectFields += $ALObjectField
                             }
                             Write-BCALLog -Level VERBOSE "++++++++++++++++++++++++++" -logfile $LogFilePath
 
-
-                            $ALObject | Add-Member NoteProperty "Fields" $ALObjectFields
+                            $ALObject.Fields = $ALObjectFields
                         }
                     }
                     #endregion
@@ -309,11 +325,11 @@ function Get-BCALObjects {
                                 #region This is my current work
                                 # TODO: How to add this in the procedure (we have to go deeper!)
                                 $RegExVariables = '(?mi)(?!\s*var)^(?:[^\/]*?)(?<VariableName>[\w]*):.(?<DataType>[\S+]*)(?<!;)?(?<SubType>.*)?;';
-                                $VariablesMatches = select-string -InputObject $ProcedureVariableDeclarationMatch.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
-                                if ([string]::IsNullOrEmpty($VariablesMatches)) {
+                                $LocalVariablesMatches = select-string -InputObject $ProcedureVariableDeclarationMatch.Groups['Variables'].Value -Pattern $RegExVariables -AllMatches | ForEach-Object { $_.Matches }
+                                if ([string]::IsNullOrEmpty($LocalVariablesMatches)) {
                                     $ALObjectProcedure | Add-Member NoteProperty "HasVariables" $false
                                 }else{
-                                    $VariablesMatches | ForEach-Object {
+                                    $LocalVariablesMatches | ForEach-Object {
                                         $Variable = $_;
                                         Write-BCALLog -Level VERBOSE "---->Variable $($Variable.Groups['VariableName'])" -logfile $LogFilePath
 

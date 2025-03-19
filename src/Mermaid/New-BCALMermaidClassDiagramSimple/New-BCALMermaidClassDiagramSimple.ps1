@@ -28,6 +28,7 @@ function New-BCALMermaidClassDiagramSimple {
             Write-BCALLog "Loading Objects" -logfile $LogFilePath
             $ALObjects = Get-BCALObjects $SourceFilePath -DetailedMetadata
         }
+        Write-BCALLog -Level VERBOSE "Start Search with Objectname: $($SearchObjectByName)!" -logfile $LogFilePath
 
         # $ALObjects = $ALObjects | Where-Object { ($_.Type -eq "table") -or ($_.Type -eq "tableextension" ) -or ($_.Type -eq "codeunit") }
         
@@ -70,33 +71,45 @@ function New-BCALMermaidClassDiagramSimple {
         
         #region TableRelations
         $ALTables | ForEach-Object {
-            $AlFields = $_.Fields
+            $ALTable = $_;
+            Write-BCALLog "TableRelations for $($ALTable.Name)" -logfile $LogFilePath
+            $AlFields = $ALTable.Fields
+            Write-BCALLog "Fields: $($AlFields.Count)" -logfile $LogFilePath
+            # Could be filtered!
             $AlFields | ForEach-Object {
-                $ALFieldProperties = $_.Properties
-                $ALFieldProperties | ForEach-Object {                    
-                    # $HasTableRelations = $_.PSObject.Properties.Name.Contains("TableRelations");
-                    $HasTableRelations = $_.PSObject.Properties.Name.ToLower() -eq "tablerelations";
-                                        
-                    if ($HasTableRelations) {
-                        $_.TableRelations | ForEach-Object { 
-                            $MarkdownRelation = New-Object PSObject
-                            $MarkdownRelation | Add-Member NoteProperty "From" "$($_."Source Object Name")"
-                            $MarkdownRelation | Add-Member NoteProperty "FromObjectType" "$($_."Source Object Type")"
-                            $MarkdownRelation | Add-Member NoteProperty "To" "$($_.Table)"
-                            $MarkdownRelation | Add-Member NoteProperty "ToObjectType" "table"
-                            $MarkdownRelation | Add-Member NoteProperty "LinkType" "TableRelation"
-                            $MarkdownRelations += $MarkdownRelation;                            
-                        }
-                    }
+                $AlField = $_;
+                Write-BCALLog "Field ($($ALField.Name))" -logfile $LogFilePath
+                $TableRelationProperties = $AlField.Properties | Where-object { $_.psobject.Properties.Name -match ".*TableRelations.*" }
+                Write-BCALLog "TableRelation Properties: ($($TableRelationProperties))" -logfile $LogFilePath
+
+                $TableRelations = $TableRelationProperties.TableRelations | Where-Object { $_ }
+                $TableRelations | ForEach-Object {
+                    $TableRelation = $_;
+                    Write-BCALLog "Relation: $($TableRelation)" -logfile $LogFilePath
+
+                    $MarkdownRelation = New-Object PSObject
+                    $MarkdownRelation | Add-Member NoteProperty "From" "$($AlField."Source Object Name")"
+                    $MarkdownRelation | Add-Member NoteProperty "FromObjectType" "$($AlField."Source Object Type")"
+                    $MarkdownRelation | Add-Member NoteProperty "To" "$($TableRelation.Table)"
+                    $MarkdownRelation | Add-Member NoteProperty "ToObjectType" "table"
+                    $MarkdownRelation | Add-Member NoteProperty "LinkType" "TableRelation"
+                    $MarkdownRelations += $MarkdownRelation;
                 }
             }
-        }   
+        }
         #endregion
         # ########################
+        # $MarkdownRelationsAsArray = @()
+        # $MarkdownRelationsAsArray += $MarkdownRelations;
+        # Write-BCALLog -Level VERBOSE "Found Markdown Relations: '$($MarkdownRelationsAsArray.Count())' ..." -logfile $LogFilePath
+
 
         $MarkdownRelations = $MarkdownRelations | Sort-Object From
-        if (![string]::IsNullOrEmpty($SearchObjectByName)) {          
+        if (![string]::IsNullOrEmpty($SearchObjectByName)) {
+            Write-BCALLog -Level VERBOSE "Markdown Relations: $($MarkdownRelations)" -logfile $LogFilePath  
+            Write-BCALLog -Level VERBOSE "Search Object By Name: '$($SearchObjectByName)' ..." -logfile $LogFilePath
             $MarkdownRelations = $MarkdownRelations | Where-Object { ($_.From -eq $SearchObjectByName) -or ($_.To -eq $SearchObjectByName) }
+            Write-BCALLog -Level VERBOSE "...found: $($MarkdownRelations.Count())" -logfile $LogFilePath  
         }
 
         $MarkdownRelationLines = "";        
